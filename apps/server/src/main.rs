@@ -17,12 +17,16 @@ async fn main() -> anyhow::Result<()> {
     dotenvy::dotenv().ok();
 
     tracing_subscriber::registry()
-        .with(tracing_subscriber::EnvFilter::try_from_default_env().unwrap_or_else(|_| "info".into()))
+        .with(
+            tracing_subscriber::EnvFilter::try_from_default_env().unwrap_or_else(|_| "info".into()),
+        )
         .with(tracing_subscriber::fmt::layer())
         .init();
 
-    let app = Router::new()
-        .route("/health", get(|| async { Json(json!({"status": "ok", "service": "ecd-server"})) }));
+    let app = Router::new().route(
+        "/health",
+        get(|| async { Json(json!({"status": "ok", "service": "ecd-server"})) }),
+    );
 
     let addr = SocketAddr::from(([0, 0, 0, 0], 8080));
     tracing::info!("Servidor Axum iniciado em http://{}", addr);

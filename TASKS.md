@@ -47,44 +47,44 @@ graph TD
 
 ---
 
-## Onda 1: Trilhas Paralelas Independentes (Agentes 1 a 6)
+## Onda 1: Trilhas Paralelas Independentes (Agentes 1 a 6) — Concluída [x]
 
 ### Trilha 1: Motor de Parsing SPED (`crates/ecd-parser`) — [Agente 1]
-- [ ] **TASK-101**: Implementar `SpedStreamReader` com `memmap2` e fatiamento zero-copy de registros em `crates/ecd-parser/src/reader.rs`.
-- [ ] **TASK-102**: Implementar decodificadores tipados para os Blocos `0000`, `I010`, `I030`, `I050`, `I051`, `I052`, `I053`, `I150` e `I155` (incluindo consolidação em `RegI050`).
-- [ ] **TASK-103**: Implementar decodificadores tipados para os Blocos `I355` (`RegI355`), `J005`, `J100`, `J150` (`RegJ150`), `J210` e `J215`.
-- [ ] **TASK-104**: Criar suite de testes unitários com fixture SPED (codificação `WINDOWS_1252`, datas `DDMMAAAA` e decimais com vírgula).
+- [x] **TASK-101**: Implementar `SpedStreamReader` com `memmap2` e fatiamento zero-copy de registros em `crates/ecd-parser/src/reader.rs`.
+- [x] **TASK-102**: Implementar decodificadores tipados para os Blocos `0000`, `I010`, `I030`, `I050`, `I051`, `I052`, `I053`, `I150` e `I155` (incluindo consolidação em `RegI050`).
+- [x] **TASK-103**: Implementar decodificadores tipados para os Blocos `I355` (`RegI355`), `J005`, `J100`, `J150` (`RegJ150`), `J210` e `J215`.
+- [x] **TASK-104**: Criar suite de testes unitários com fixture SPED (codificação `WINDOWS_1252`, datas `DDMMAAAA` e decimais com vírgula).
 
 ### Trilha 2: Motor de Grafos da Rede CNPJ (`crates/ecd-graph`) — [Agente 2]
-- [ ] **TASK-201**: Implementar pool de conexões SQLite thread-safe (`r2d2_sqlite`) em modo `query_only = ON` com pragmas `mmap_size` e `cache_size`.
-- [ ] **TASK-202**: Implementar algoritmo BFS de expansão em N camadas (1 a 10) usando `petgraph::UnGraph` e poda `kLimiteCamada = 1000`.
-- [ ] **TASK-203**: Implementar cruzamento atômico com sanções da base `links.db` (PEP, CEIS, CEPIM, CNEP, Dívida PGFN).
-- [ ] **TASK-204**: Implementar busca de menor caminho (`petgraph::algo::dijkstra`) entre duas entidades corporativas ou sócios.
-- [ ] **TASK-205**: Criar testes unitários com banco SQLite em memória/fixture validando prevenção de ciclos e limites de camada.
+- [x] **TASK-201**: Implementar pool de conexões SQLite thread-safe (`r2d2_sqlite`) em modo `query_only = ON` com pragmas `mmap_size` e `cache_size`.
+- [x] **TASK-202**: Implementar algoritmo BFS de expansão em N camadas (1 a 10) usando `petgraph::UnGraph` e poda `kLimiteCamada = 1000`.
+- [x] **TASK-203**: Implementar cruzamento atômico com sanções da base `links.db` (PEP, CEIS, CEPIM, CNEP, Dívida PGFN).
+- [x] **TASK-204**: Implementar busca de menor caminho (`petgraph::algo::dijkstra`) entre duas entidades corporativas ou sócios.
+- [x] **TASK-205**: Criar testes unitários com banco SQLite em memória/fixture validando prevenção de ciclos e limites de camada.
 
 ### Trilha 3: Motor Fiscal & Apuração de Receitas (`crates/ecd-fiscal`) — [Agente 3]
-- [ ] **TASK-301**: Implementar extrator de receitas (`crates/ecd-fiscal/src/revenue.rs`) com `partial_ratio >= 0.80`, catálogo de 24 termos e os 12 filtros negativos de `RegJ150` e `RegI355`.
-- [ ] **TASK-302**: Implementar cálculo consolidado de `receita_bruta`, `receita_servico`, `outras_receitas` e `receita_acumulada`.
-- [ ] **TASK-303**: Implementar gerador de planilhas Excel multi-aba (`crates/ecd-fiscal/src/xlsx.rs` com `umya-spreadsheet`) para blocos `0000`, `J100`, `J150` e `I155`.
-- [ ] **TASK-304**: Criar testes unitários garantindo paridade aritmética com `apps/fiscal/utils.py` e `apps/fiscal/utils_recfuze.py`.
+- [x] **TASK-301**: Implementar extrator de receitas (`crates/ecd-fiscal/src/revenue.rs`) com `partial_ratio >= 0.80`, catálogo de 24 termos e os 12 filtros negativos de `RegJ150` e `RegI355`.
+- [x] **TASK-302**: Implementar cálculo consolidado de `receita_bruta`, `receita_servico`, `outras_receitas` e `receita_acumulada`.
+- [x] **TASK-303**: Implementar gerador de planilhas Excel multi-aba (`crates/ecd-fiscal/src/xlsx.rs` com `umya-spreadsheet`) para blocos `0000`, `J100`, `J150` e `I155`.
+- [x] **TASK-304**: Criar testes unitários garantindo paridade aritmética com `apps/fiscal/utils.py` e `apps/fiscal/utils_recfuze.py`.
 
 ### Trilha 4: Motor de Indicadores Econômicos (`crates/ecd-analytics`) — [Agente 4]
-- [ ] **TASK-401**: Implementar agregador de indicadores cadastrais e econômicos (CNAE Top 15, Porte Empresarial, Regime Tributário Simples/MEI, Capital Social Médio e UF/Município) sobre SQLite/PostgreSQL.
-- [ ] **TASK-402**: Implementar cache em memória assíncrono com `moka::future::Cache` e TTL configurável.
-- [ ] **TASK-403**: Criar testes unitários validando cálculos percentuais e invalidação/hit de cache.
+- [x] **TASK-401**: Implementar agregador de indicadores cadastrais e econômicos (CNAE Top 15, Porte Empresarial, Regime Tributário Simples/MEI, Capital Social Médio e UF/Município) sobre SQLite/PostgreSQL.
+- [x] **TASK-402**: Implementar cache em memória assíncrono com `moka::future::Cache` e TTL configurável.
+- [x] **TASK-403**: Criar testes unitários validando cálculos percentuais e invalidação/hit de cache.
 
 ### Trilha 5: Frontend SPA React + Shadcn UI (`apps/web`) — [Agente 5]
-- [ ] **TASK-501**: Configurar layout base (`AppLayout`, `Sidebar`), tema Tailwind/Shadcn UI, TanStack Router e cliente HTTP com `withCredentials: true`.
-- [ ] **TASK-502**: Implementar tela de Ingestão (`FileDropzone`, `ImportJobsTable` e `LiveLogDrawer` via `EventSource` SSE).
-- [ ] **TASK-503**: Implementar tela de Auditoria por CNPJ (`CnpjSearchBar` com validação DV, abas `0000`/`J100`/`J150`/`I155` virtualizadas com TanStack Table e exportação XLSX).
-- [ ] **TASK-504**: Implementar tela de Rede Societária GRC (`NetworkGraphCanvas` com Vis-Network, controle de 1-10 camadas, busca de menor caminho e `NodeDetailDrawer` com badges sancionatórios) e Dashboard de Indicadores Econômicos.
-- [ ] **TASK-505**: Implementar Copiloto de IA (`AiChatDrawer` com Markdown e `DynamicChartRenderer` com Recharts).
+- [x] **TASK-501**: Configurar layout base (`AppLayout`, `Sidebar`), tema Tailwind/Shadcn UI, TanStack Router e cliente HTTP com `withCredentials: true`.
+- [x] **TASK-502**: Implementar tela de Ingestão (`FileDropzone`, `ImportJobsTable` e `LiveLogDrawer` via `EventSource` SSE).
+- [x] **TASK-503**: Implementar tela de Auditoria por CNPJ (`CnpjSearchBar` com validação DV, abas `0000`/`J100`/`J150`/`I155` virtualizadas com TanStack Table e exportação XLSX).
+- [x] **TASK-504**: Implementar tela de Rede Societária GRC (`NetworkGraphCanvas` com Vis-Network, controle de 1-10 camadas, busca de menor caminho e `NodeDetailDrawer` com badges sancionatórios) e Dashboard de Indicadores Econômicos.
+- [x] **TASK-505**: Implementar Copiloto de IA (`AiChatDrawer` com Markdown e `DynamicChartRenderer` com Recharts).
 
 ### Trilha 6: AI Gateway com LangChain (`services/ai-gateway`) — [Agente 6]
-- [ ] **TASK-601**: Configurar FastAPI, Pydantic Settings e cliente LLM LangChain (`ChatGroq` / `ChatOpenAI`).
-- [ ] **TASK-602**: Implementar catálogo de ferramentas `@tool` (`buscar_dados_cadastrais`, `apurar_demonstrativo_dre`, `analisar_grafo_societario`, `consultar_indicadores_setor`, `construir_grafico_dashboard`).
-- [ ] **TASK-603**: Implementar grafo ReAct com LangGraph retornando `ChatResponse` (relatório Markdown + `ChartSpec` JSON) e streaming SSE.
-- [ ] **TASK-604**: Criar testes unitários e de contrato com `pytest` validando o schema JSON dos gráficos.
+- [x] **TASK-601**: Configurar FastAPI, Pydantic Settings e cliente LLM LangChain (`ChatGroq` / `ChatOpenAI`).
+- [x] **TASK-602**: Implementar catálogo de ferramentas `@tool` (`buscar_dados_cadastrais`, `apurar_demonstrativo_dre`, `analisar_grafo_societario`, `consultar_indicadores_setor`, `construir_grafico_dashboard`).
+- [x] **TASK-603**: Implementar grafo ReAct com LangGraph retornando `ChatResponse` (relatório Markdown + `ChartSpec` JSON) e streaming SSE.
+- [x] **TASK-604**: Criar testes unitários e de contrato com `pytest` validando o schema JSON dos gráficos.
 
 ---
 

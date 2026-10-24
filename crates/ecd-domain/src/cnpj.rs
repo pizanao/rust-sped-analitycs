@@ -42,7 +42,11 @@ impl Cnpj {
 
         // Validação 1º dígito
         let pesos1 = [5, 4, 3, 2, 9, 8, 7, 6, 5, 4, 3, 2];
-        let soma1: u32 = nums[0..12].iter().zip(pesos1.iter()).map(|(a, b)| a * b).sum();
+        let soma1: u32 = nums[0..12]
+            .iter()
+            .zip(pesos1.iter())
+            .map(|(a, b)| a * b)
+            .sum();
         let resto1 = soma1 % 11;
         let dig1 = if resto1 < 2 { 0 } else { 11 - resto1 };
         if nums[12] != dig1 {
@@ -51,7 +55,11 @@ impl Cnpj {
 
         // Validação 2º dígito
         let pesos2 = [6, 5, 4, 3, 2, 9, 8, 7, 6, 5, 4, 3, 2];
-        let soma2: u32 = nums[0..13].iter().zip(pesos2.iter()).map(|(a, b)| a * b).sum();
+        let soma2: u32 = nums[0..13]
+            .iter()
+            .zip(pesos2.iter())
+            .map(|(a, b)| a * b)
+            .sum();
         let resto2 = soma2 % 11;
         let dig2 = if resto2 < 2 { 0 } else { 11 - resto2 };
         nums[13] == dig2
