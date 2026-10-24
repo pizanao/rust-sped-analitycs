@@ -96,7 +96,7 @@ Todas as tabelas contábeis originais mantêm 100% de compatibilidade de nomes e
 # Checagem rápida de todos os 6 crates e 2 binários
 cargo check --workspace
 
-# Executar todos os testes unitários
+# Executar todos os testes unitários e de integração (82 testes)
 cargo test --workspace
 
 # Verificar formatação e lints
@@ -104,20 +104,28 @@ cargo fmt --check
 cargo clippy --workspace -- -D warnings
 ```
 
-### 2. Executar o Frontend SPA (`apps/web`)
+### 2. Executar e Testar o Frontend SPA (`apps/web`)
 ```bash
 cd apps/web
 npm install
-npm run dev
+npm test            # 15 testes de tipagem, rotas e contratos
+npm run dev         # Iniciar servidor Vite (http://localhost:3000)
 ```
 
-### 3. Executar o AI Gateway (`services/ai-gateway`)
+### 3. Executar e Testar o AI Gateway (`services/ai-gateway`)
 ```bash
 cd services/ai-gateway
 python3 -m venv .venv
 source .venv/bin/activate
 pip install -r requirements.txt
+pytest tests/ -v    # 43 testes de agentes, ferramentas e schemas Recharts
 uvicorn app.main:app --reload --port 8000
+```
+
+### 4. Executar Testes de Paridade Rigorosa com o Django Legado
+```bash
+# Executa a bateria de 7 testes de paridade (algoritmo Hyyrö, normalização, termos e SPED completo)
+services/ai-gateway/.venv/bin/pytest tests/parity/test_sped_parity.py -v
 ```
 
 ---

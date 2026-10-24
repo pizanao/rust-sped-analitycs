@@ -91,3 +91,9 @@ Comparando com [`apps/fiscal/utils.py`](file:///home/pizani/Projects/ecd_analyti
      - `JWT_SECRET` é estritamente obrigatório e deve ter no mínimo 32 caracteres seguros; chaves default de desenvolvimento são rejeitadas fatalmente no boot.
      - `DATABASE_URL` é estritamente obrigatória; qualquer falha de conexão com o PostgreSQL aborta o processo imediatamente (fallback silencioso para memória desativado).
      - Credenciais ou usuários pré-configurados em código (`Admin@2026!`, etc.) foram completamente isolados para testes e desenvolvimento; em produção, a coleção em memória inicia vazia e o sistema consulta unicamente a base de dados oficial.
+
+5. **Matriz de Homologação e Cobertura de Testes (100% Verde)**:
+   - **Workspace Rust**: **82/82 testes unitários e de integração aprovados** (`ecd-analytics`: 24, `ecd-fiscal`: 20, `ecd-graph`: 8, `ecd-parser`: 6, `ecd-storage`: 8 com PostgreSQL real, `apps/worker`: 6 com Redis real, `apps/server`: 10 com Axum e JWT).
+   - **Paridade com Django Legado**: **7/7 testes aprovados** (`tests/parity/test_sped_parity.py`) cobrindo `process_cta`, normalização, Hyyrö bit-parallel vs `rapidfuzz`, catálogo de 24 termos, 12 filtros de exclusão, parsing Windows-1252 e apuração.
+   - **Microsserviço AI Gateway**: **43/43 testes aprovados** em `pytest` (`services/ai-gateway/tests/`), incluindo schemas Recharts, endpoints SSE e fallback mock isolado de colisões de portas locais.
+   - **Frontend Web SPA**: **15/15 testes aprovados** (`apps/web/src/tests/`), cobrindo tipagem contábil, clientes HTTP com cookies HttpOnly, rotas TanStack e contratos JSON de gráficos.

@@ -6,8 +6,9 @@ from app.config import Settings, get_llm, get_settings
 from app.mock_llm import MockFiscalChatModel
 
 
-def test_settings_defaults():
+def test_settings_defaults(monkeypatch):
     """Valida valores padrão das configurações."""
+    monkeypatch.delenv("ECD_BACKEND_URL", raising=False)
     settings = Settings()
     assert settings.backend_url == "http://localhost:3000"
     assert settings.temperature == 0.0

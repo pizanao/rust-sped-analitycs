@@ -95,6 +95,8 @@ class BackendClient:
                             "outras_receitas": resultado.get("outras_receitas", 0.0),
                             "receita_acumulada": resultado.get("receita_acumulada", 0.0),
                             "total_nota": resultado.get("total_nota", 0.0),
+                            "deducoes": resultado.get("deducoes", 0.0),
+                            "receita_liquida": resultado.get("receita_liquida", 0.0),
                             "periodo_inicial": resultado.get("periodo_inicial"),
                             "periodo_final": resultado.get("periodo_final"),
                             "reg_j150": data.get("reg_j150", []),
