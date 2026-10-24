@@ -2,7 +2,7 @@
 # -*- coding: utf-8 -*-
 """
 Gerador de Massa de Testes SPED ECD e EFD ICMS/IPI
-Compatível com PVA Oficial (RFB) e Suíte de Testes do Speed Rust App.
+Compatível com PVA Oficial (RFB) e Suíte de Testes do Rust Sped Analytics.
 
 Garante:
 - CNPJs fictícios válidos (Dígito Verificador via Módulo 11)

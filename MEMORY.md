@@ -1,4 +1,4 @@
-# MEMORY.md — Registro de Decisões Arquiteturais e Ajustes de Revisão (`speed_rust_app`)
+# MEMORY.md — Registro de Decisões Arquiteturais e Ajustes de Revisão (`rust_sped_analytics`)
 
 > **Última atualização**: 2026-10-24
 > **Propósito**: Memória persistente do projeto para orientar todos os agentes de desenvolvimento sobre regras invioláveis de negócio, correções de paridade com o legado Django (`ecd_analytics`) e isolamento entre trilhas paralelas.
@@ -7,7 +7,7 @@
 
 ## 1. Paridade 100% do Schema Contábil (`core`) no PostgreSQL
 
-Durante a revisão cruzada com [`apps/core/models.py`](file:///home/pizani/Projects/ecd_analytics/apps/core/models.py) e [`apps/core/migrations/0001_initial.py`](file:///home/pizani/Projects/ecd_analytics/apps/core/migrations/0001_initial.py), foram identificados e corrigidos os seguintes pontos críticos em [`migrations/0001_initial_schema.sql`](file:///home/pizani/Projects/ecd_analytics/apps/speed_rust_app/migrations/0001_initial_schema.sql) e [`crates/ecd-domain/src/sped.rs`](file:///home/pizani/Projects/ecd_analytics/apps/speed_rust_app/crates/ecd-domain/src/sped.rs):
+Durante a revisão cruzada com os models e migrações do Django legado (`apps/core/models.py` e `apps/core/migrations/0001_initial.py`), foram identificados e corrigidos os seguintes pontos críticos em [`migrations/0001_initial_schema.sql`](migrations/0001_initial_schema.sql) e [`crates/ecd-domain/src/sped.rs`](crates/ecd-domain/src/sped.rs):
 
 1. **Tabelas com `db_table` customizado (NÃO usam o prefixo `core_`)**:
    - Model `RegI050` $\rightarrow$ tabela **`regi050_plano_contas`** (`id UUID PRIMARY KEY`, `hash_arquivo VARCHAR(40)`, `reg051_json JSONB`, `reg052_json JSONB`). Coexiste com a tabela relacional `core_registroi050`.
@@ -24,11 +24,11 @@ Durante a revisão cruzada com [`apps/core/models.py`](file:///home/pizani/Proje
 
 ## 2. Paridade Aritmética na Apuração Fiscal (`ecd-fiscal`)
 
-Comparando com [`apps/fiscal/utils.py`](file:///home/pizani/Projects/ecd_analytics/apps/fiscal/utils.py) e [`apps/fiscal/utils_recfuze.py`](file:///home/pizani/Projects/ecd_analytics/apps/fiscal/utils_recfuze.py):
+Comparando com os utilitários fiscais do Django legado (`apps/fiscal/utils.py` e `apps/fiscal/utils_recfuze.py`):
 
 1. **Algoritmo de Similaridade (`partial_ratio` $\ge 0.80$)**:
    - O sistema legado utiliza `rapidfuzz.fuzz.partial_ratio(descricao, termo) >= 80`.
-   - O uso de distância global (`normalized_damerau_levenshtein` na string completa) penalizava descrições longas reais do SPED. Por isso, [`crates/ecd-fiscal/src/lib.rs`](file:///home/pizani/Projects/ecd_analytics/apps/speed_rust_app/crates/ecd-fiscal/src/lib.rs) implementa `ReceitaExtractor::partial_ratio` por janela deslizante sobre `normalized_levenshtein`.
+   - O uso de distância global (`normalized_damerau_levenshtein` na string completa) penalizava descrições longas reais do SPED. Por isso, [`crates/ecd-fiscal/src/lib.rs`](crates/ecd-fiscal/src/lib.rs) implementa `ReceitaExtractor::partial_ratio` por janela deslizante sobre `normalized_levenshtein`.
 2. **Pré-filtros Obrigatórios de `RegJ150` (`elegivel_receita_j150`)**:
    - `IND_DC_CTA_FIN = 'C'`
    - `VL_CTA_FIN > 0`
@@ -48,7 +48,7 @@ Comparando com [`apps/fiscal/utils.py`](file:///home/pizani/Projects/ecd_analyti
 2. **Unicidade com `NULL` em `resultados_exercicio`**:
    - Definida com `UNIQUE NULLS NOT DISTINCT (cnpj, periodo_inicial, periodo_final, cnpj_scp)` (PostgreSQL 15+), impedindo duplicidade quando a escrituração não pertence a uma SCP (`cnpj_scp IS NULL`).
 3. **Contratos de Fila e Eventos Redis em `ecd-domain`**:
-   - `ImportSpedJobPayload` (fila `ecd:queue:jobs`) e `JobStatusEvent` (canal Pub/Sub `ecd:events:status`) estão consolidados em [`crates/ecd-domain/src/fiscal.rs`](file:///home/pizani/Projects/ecd_analytics/apps/speed_rust_app/crates/ecd-domain/src/fiscal.rs).
+   - `ImportSpedJobPayload` (fila `ecd:queue:jobs`) e `JobStatusEvent` (canal Pub/Sub `ecd:events:status`) estão consolidados em [`crates/ecd-domain/src/fiscal.rs`](crates/ecd-domain/src/fiscal.rs).
 
 ---
 

@@ -1,4 +1,4 @@
-# Speed Rust App — ECD Analytics Platform
+# Rust Sped Analytics — ECD Analytics Platform
 
 > **Plataforma Corporativa de Alta Performance em Rust + React SPA + AI Gateway (LangChain/LangGraph) para Auditoria Contábil SPED ECD, Apuração Fiscal de Receitas e Inteligência Societária (Rede CNPJ / Turmalina).**
 
@@ -6,7 +6,7 @@
 
 ## 1. Visão Geral da Arquitetura
 
-O **Speed Rust App** é a rearquitetura moderna e desacoplada do **ECD Analytics**, projetada para processar arquivos massivos da Escrituração Contábil Digital (SPED ECD de 100 MB a 2 GB+) em segundos com uso mínimo de RAM, preservando **100% de compatibilidade com o modelo de dados contábil oficial da Receita Federal do Brasil (RFB)**.
+O **Rust Sped Analytics** é a rearquitetura moderna e desacoplada do **ECD Analytics**, projetada para processar arquivos massivos da Escrituração Contábil Digital (SPED ECD de 100 MB a 2 GB+) em segundos com uso mínimo de RAM, preservando **100% de compatibilidade com o modelo de dados contábil oficial da Receita Federal do Brasil (RFB)**.
 
 ### Principais Pilares Técnicos
 * **Motor de Ingestão Zero-Copy (`ecd-parser` + `apps/worker`)**:
@@ -31,7 +31,7 @@ O **Speed Rust App** é a rearquitetura moderna e desacoplada do **ECD Analytics
 ## 2. Estrutura do Monorepo
 
 ```text
-speed_rust_app/
+rust-sped-analitycs/
 ├── Cargo.toml                       # Workspace Cargo raiz (6 crates + 2 binários)
 ├── MEMORY.md                        # Memória arquitetural, decisões de paridade e ajustes
 ├── AGENT_GUIDE.md                   # Protocolo de isolamento para execução multi-agentes
