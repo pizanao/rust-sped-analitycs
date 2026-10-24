@@ -3,6 +3,14 @@
 //! Camada de persistência e acesso a dados:
 //! - PostgreSQL via SQLx (schema core_* preservado e tabelas de apoio otimizadas)
 //! - SQLite via Rusqlite + R2D2 pool (leitura somente-leitura das bases da Receita Federal)
+//!
+//! Os submódulos são pré-declarados para que o Agente do Worker (`sped_repository`)
+//! e o Agente do Server (`auth_repository`, `fiscal_repository`) trabalhem em paralelo
+//! sem conflito de merge neste arquivo `lib.rs`.
+
+pub mod auth_repository;
+pub mod fiscal_repository;
+pub mod sped_repository;
 
 use sqlx::postgres::PgPoolOptions;
 use sqlx::PgPool;

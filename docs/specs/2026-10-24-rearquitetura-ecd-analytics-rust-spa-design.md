@@ -70,28 +70,30 @@ graph TD
 ## 3. Modelo de Dados & Armazenamento
 
 ### 3.1 Tabelas Preservadas do Bloco Contábil (`core`)
-Conforme a restrição obrigatória de compliance com o SPED ECD da Receita Federal, as seguintes tabelas mantêm estritamente os nomes de colunas, tipos e relacionamentos originais:
+Conforme a restrição obrigatória de compliance com o SPED ECD da Receita Federal e paridade 100% com [`apps/core/models.py`](file:///home/pizani/Projects/ecd_analytics/apps/core/models.py), as seguintes 14 tabelas mantêm estritamente os nomes de tabelas (`db_table`), colunas, tipos e relacionamentos originais:
 
-- `core_registro0000`: Identificação do arquivo e entidade (CNPJ, razão social, UF, IE, IM, situação especial, hash da escrituração, hash da substituída).
-- `core_registroi010`: Identificação da escrituração contábil e forma de escrituração.
-- `core_registroi030`: Termo de abertura do livro contábil (NIRE, data de arquivamento, data de encerramento).
-- `core_regi050` / `core_registroi050`: Plano de contas da pessoa jurídica.
-- `core_registroi051`: Mapeamento para o plano de contas referencial da RFB.
-- `core_registroi052`: Códigos de aglutinação contábil.
-- `core_registroi053`: Subcontas correlatas.
-- `core_registroi150`: Identificação do período de saldos.
-- `core_registroi155`: Detalhes dos saldos periódicos (saldos iniciais, débitos, créditos, saldos finais).
-- `core_regi355`: Saldos das contas de resultado antes do encerramento.
-- `core_registroj005`: Demonstrações contábeis.
-- `core_registroj100`: Balanço Patrimonial.
-- `core_regj150`: Demonstração do Resultado do Exercício (DRE).
+- `core_registro0000`: Identificação do arquivo e entidade (`dt_ini`, `dt_fim`, `nome_razao`, `cnpj`, `uf`, `ie`, `cod_mun`, `im`, `ind_sit_esp`, `ind_sit_ini_per`, `ind_nire`, `ind_fin_esc`, `cod_hash_sub`, `ind_grande_porte`, `tip_ecd`, `cod_scp`, `ident_mf`, `ind_esc_cons`, `ind_centralizada`, `ind_mudanc_pc`, `cod_plan_ref`, `i990`, `j990`, `hash_arquivo_id`).
+- `core_registroi010`: Identificação da escrituração contábil (`ind_esc`, `cod_ver_lc`, `reg_0000_id`).
+- `core_registroi030`: Termo de abertura do livro contábil (`num_ord`, `nat_livr` VARCHAR(90), `qtd_lin`, `nome` VARCHAR(150), `nire`, `cnpj`, `dt_arq`, `dt_arq_conv`, `desc_mun`, `dt_ex_social`, `reg_0000_id`, `hash_arquivo_id`).
+- `core_registroi050`: Plano de contas relacional da PJ (`cod_cta`, `cta`, `nivel`, `ind_cta`, `cod_nat`, `cod_cta_sup`, `dt_alt`, `descr_cta`, `descr_conta`, `codigo_conta`, `reg_0000_id`).
+- `core_registroi051`: Mapeamento para o plano de contas referencial da RFB (`cod_ccus`, `cod_cta_ref`, `reg_0000_id`, `reg_i050_id`).
+- `core_registroi052`: Códigos de aglutinação contábil (`cod_ccus`, `cod_agl`, `reg_0000_id`, `reg_i050_id`).
+- `core_registroi053`: Subcontas correlatas (`cod_idt`, `cod_cnt_corr`, `nat_sub_cnt`, `reg_0000_id`).
+- `regi050_plano_contas` (model `RegI050`): Plano de contas consolidado com `id` UUID, `reg051_json` (JSONB), `reg052_json` (JSONB), `nome_cta_referencia` e `hash_arquivo`.
+- `core_registroi150`: Identificação do período de saldos (`dt_ini`, `dt_fim`, `reg_0000_id`).
+- `core_registroi155`: Detalhes dos saldos periódicos (`cod_cta`, `cod_ccus`, `vl_sld_ini`, `ind_dc_ini`, `vl_deb`, `vl_cred`, `vl_sld_fim`, `ind_dc_fim`, `reg_0000_id`, `reg_i150_id`).
+- `regi355_detalhes_contas_resultado` (model `RegI355`): Saldos das contas de resultado antes do encerramento (`id` UUID, `cnpj`, `cod_cta`, `nome_cta_referencia`, `cod_ccus`, `vl_cta`, `ind_dc`, `vl_cta_mf`, `ind_dc_mf`, `dt_res`, `cod_agl`, `cod_cta_ref`, `nome_aglutinador`, `hash_arquivo`).
+- `core_registroj005`: Demonstrações contábeis (`dt_ini`, `dt_fim`, `id_dem`, `cab_dem`, `cnpj`, `hash_arquivo_id`, `reg_0000_id`).
+- `core_registroj100`: Balanço Patrimonial (`cod_agl`, `ind_cod_agl`, `nivel_agl`, `cod_agl_sup`, `ind_grp_bal`, `descr_cod_agl`, `vl_cta_ini`, `ind_dc_cta_ini`, `vl_cta_fin`, `ind_dc_cta_fin`, `nota_exp_ref`, `cnpj`, `hash_arquivo_id`, `reg_0000_id`, `reg_j005_id`).
+- `regj150_demonstracao_resultado` (model `RegJ150`): Demonstração do Resultado do Exercício - DRE (`id` BIGSERIAL, `nu_ordem`, `cod_agl`, `ind_cod_agl`, `nivel_agl`, `cod_agl_sup`, `descr_cod_agl`, `vl_cta_ini`, `ind_dc_cta_ini`, `vl_cta_fin`, `ind_dc_cta_fin`, `ind_grp_dre`, `nota_exp_ref`, `cnpj`, `dt_ini`, `dt_fim`, `hash_arquivo`).
 - `core_registroj210` e `core_registroj215`: Demonstração das Mutações do Patrimônio Líquido (DMPL / DLPA) e fatos contábeis.
+- `plano_contas_base`: Catálogo referencial da RFB preservado para enriquecimento de contas analíticas.
 
-*Otimização aplicada*: Criação de índices compostos `CREATE INDEX idx_reg0000_cnpj_hash ON core_registro0000(cnpj, hash_arquivo_id);` e índices B-Tree nas chaves de aglutinação e plano referencial.
+*Otimização aplicada*: Criação de índices compostos `CREATE INDEX idx_reg0000_cnpj_hash ON core_registro0000(cnpj, hash_arquivo_id);`, índice em `cod_hash_sub` para exclusão rápida de escriturações substituídas e índices B-Tree nas chaves de aglutinação e plano referencial.
 
 ### 3.2 Tabelas Otimizadas de Apoio e Negócio
 1. **`importacoes_ecd`** (substitui `arquivos_importacao_ecd`):
-   - `id`: UUID v7 sequencial primário (`uuid_generate_v7()`).
+   - `id`: UUID v7 sequencial primário gerado na aplicação (`uuid::Uuid::now_v7()`).
    - `hash_arquivo`: VARCHAR(40) UNIQUE NOT NULL.
    - `cnpj`: CHAR(14) NOT NULL.
    - `nome_arquivo_original`: VARCHAR(255) NOT NULL.
@@ -103,9 +105,9 @@ Conforme a restrição obrigatória de compliance com o SPED ECD da Receita Fede
    - `mensagem_erro`: TEXT.
    - `criado_em`, `atualizado_em`: TIMESTAMPTZ NOT NULL.
 2. **`resultados_exercicio`** (substitui `resultado_exercicio_cnpj`):
-   - Chave primária: UUID v7.
-   - Chave única composta: `(cnpj, periodo_inicial, periodo_final, COALESCE(cnpj_scp, ''))`.
-   - Campos monetários: `DECIMAL(18,2)` (`receita_bruta`, `receita_servico`, `outras_receitas`, `total_nota`, `receita_acumulada`).
+   - Chave primária: UUID v7 (`uuid::Uuid::now_v7()`).
+   - Chave única composta: `UNIQUE NULLS NOT DISTINCT (cnpj, periodo_inicial, periodo_final, cnpj_scp)`.
+   - Campos monetários: `DECIMAL(22,2)` (`receita_bruta`, `receita_servico`, `outras_receitas`, `total_nota`, `receita_acumulada`).
    - Colunas `detalhes_i355` e `detalhes_j150`: `JSONB` com índices GIN para pesquisas instantâneas de rubricas contábeis.
 3. **`usuarios` e `tokens`** (substitui `auth_user`):
    - `id`: UUID v7.
@@ -214,9 +216,9 @@ O crate `ecd-graph` encapsula toda a inteligência societária sobre as bases lo
 O crate `ecd-fiscal` implementa as regras de conformidade e auditoria:
 
 1. **Fuzzy Matching de Receita Bruta**:
-   - Normalização da descrição das contas contábeis da DRE (`J150`) e encerramento (`I355`), removendo acentos e pontuações.
-   - Filtragem de linhas de receita credora (`IND_DC_CTA_FIN = 'C'`) com valor positivo, excluindo deduções e custos.
-   - Cálculo de similaridade textual via algoritmo Damerau-Levenshtein normalizado (`strsim`), aceitando correspondência com índice $\ge 0.80$ contra o catálogo padrão de receitas contábeis brasileiras.
+   - Normalização da descrição das contas contábeis da DRE (`regj150_demonstracao_resultado`) e encerramento (`regi355_detalhes_contas_resultado`), removendo acentos e pontuações.
+   - Filtragem estrita idêntica à query SQL legada (`IND_DC_CTA_FIN = 'C'`, `VL_CTA_FIN > 0`, `IND_COD_AGL = 'T'`, presença de `BRUTA` ou prefixo `RECEITA`, 12 cláusulas de exclusão `NOT LIKE` como `DEDU`, `IMP`, `CUST`, `LIQUID`, `ANTES`, e exclusão de escriturações substituídas via `cod_hash_sub`).
+   - Cálculo de similaridade textual via melhor substring (`partial_ratio` sobre Levenshtein normalizado via `strsim`), aceitando correspondência com índice $\ge 0.80$ contra o catálogo completo de 24 termos contábeis do sistema legado.
 2. **Exportador XLSX Nativo**:
    - Gerador de planilhas Excel em streaming via `umya-spreadsheet` ou `xlsxwriter-rs`.
    - Criação de abas dedicadas para cada demonstrativo SPED com estilos corporativos, auto-ajuste de colunas e formatações monetárias (`R$ #,##0.00`) e datas (`DD/MM/YYYY`).
