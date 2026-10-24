@@ -1,5 +1,5 @@
 # ==============================================================================
-# ECD Analytics - AI Gateway Dockerfile (FastAPI + LangGraph)
+# Rust Sped Analytics - AI Gateway Dockerfile (FastAPI + LangGraph)
 # ==============================================================================
 
 FROM python:3.11-slim

@@ -1,3 +1,3 @@
 """
-ECD Analytics AI Gateway package.
+Rust Sped Analytics AI Gateway package.
 """

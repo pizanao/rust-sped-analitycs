@@ -1,4 +1,4 @@
-# Especificação Técnica: Rearquitetura do ECD Analytics (Rust + React SPA + AI Gateway)
+# Especificação Técnica: Arquitetura Rust Sped Analytics (Rust + React SPA + AI Gateway)
 
 - **Data**: 2026-10-24
 - **Status**: Aprovado para Planejamento de Implementação
@@ -8,7 +8,7 @@
 
 ## 1. Visão Geral e Objetivos do Sistema
 
-O **ECD Analytics** é uma plataforma corporativa de auditoria contábil, apuração fiscal e inteligência de relacionamentos societários baseada em dados públicos da Receita Federal do Brasil (RFB) e arquivos da Escrituração Contábil Digital (SPED ECD).
+O **Rust Sped Analytics** é uma plataforma corporativa de auditoria contábil, apuração fiscal e inteligência de relacionamentos societários baseada em dados públicos da Receita Federal do Brasil (RFB) e arquivos da Escrituração Contábil Digital (SPED ECD).
 
 O sistema legado em Django/Python enfrenta limitações críticas de throughput e consumo de memória durante a ingestão de grandes volumes de arquivos SPED (frequentemente entre 100 MB e 2 GB por arquivo), lentidão em consultas recursivas de grafos societários e acoplamento na interface renderizada pelo servidor (SSR).
 

@@ -1,5 +1,5 @@
 # ==============================================================================
-# ECD Analytics - HTTP Server Dockerfile (Multi-stage Build)
+# Rust Sped Analytics - HTTP Server Dockerfile (Multi-stage Build)
 # ==============================================================================
 
 FROM rust:1.85-slim-bookworm AS builder

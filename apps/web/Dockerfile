@@ -1,5 +1,5 @@
 # ==============================================================================
-# ECD Analytics - React SPA Dockerfile (Multi-stage Build with Nginx)
+# Rust Sped Analytics - React SPA Dockerfile (Multi-stage Build with Nginx)
 # ==============================================================================
 
 FROM node:20-alpine AS builder

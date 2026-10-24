@@ -28,3 +28,7 @@ data/
 *.db-journal
 *.db-wal
 *.log
+
+# IDE & Editor
+.idea/
+.vscode/

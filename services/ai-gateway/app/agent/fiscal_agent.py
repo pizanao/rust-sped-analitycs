@@ -25,7 +25,7 @@ from app.tools import (
     reset_collected_charts,
 )
 
-SYSTEM_PROMPT = """Você é o Agente Especialista em Auditoria Fiscal, Contábil e Inteligência Societária da plataforma ECD Analytics.
+SYSTEM_PROMPT = """Você é o Agente Especialista em Auditoria Fiscal, Contábil e Inteligência Societária da plataforma Rust Sped Analytics.
 Sua missão é auxiliar auditores fiscais a analisar escriturações contábeis do SPED ECD (Blocos 0000, J100, J150 e I155),
 apurar a evolução de Receita Bruta e margens contábeis, cruzar participações societárias na Rede CNPJ e apontar riscos de conformidade (PEP, CEIS, CNEP, CEPIM, PGFN).
 
