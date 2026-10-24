@@ -1,0 +1,36 @@
+# ==============================================================================
+# ECD Analytics - HTTP Server Dockerfile (Multi-stage Build)
+# ==============================================================================
+
+FROM rust:1.85-slim-bookworm AS builder
+
+WORKDIR /usr/src/app
+
+RUN apt-get -o Acquire::Check-Valid-Until=false update && apt-get install -y --no-install-recommends \
+    pkg-config \
+    build-essential \
+    libssl-dev \
+    && rm -rf /var/lib/apt/lists/*
+
+COPY Cargo.toml Cargo.lock ./
+COPY crates ./crates
+COPY apps/server ./apps/server
+COPY apps/worker ./apps/worker
+
+RUN cargo build --release -p ecd-server
+
+FROM debian:bookworm-slim AS runtime
+
+WORKDIR /app
+
+RUN apt-get -o Acquire::Check-Valid-Until=false update && apt-get install -y --no-install-recommends \
+    ca-certificates \
+    curl \
+    && rm -rf /var/lib/apt/lists/*
+
+COPY --from=builder /usr/src/app/target/release/ecd-server /usr/local/bin/ecd-server
+
+ENV PORT=8080
+EXPOSE 8080
+
+CMD ["ecd-server"]

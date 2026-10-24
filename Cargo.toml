@@ -1,0 +1,72 @@
+[workspace]
+resolver = "2"
+members = [
+    "crates/ecd-domain",
+    "crates/ecd-parser",
+    "crates/ecd-fiscal",
+    "crates/ecd-graph",
+    "crates/ecd-analytics",
+    "crates/ecd-storage",
+    "apps/server",
+    "apps/worker",
+]
+
+[workspace.package]
+version = "0.1.0"
+edition = "2021"
+authors = ["ECD Analytics Team"]
+license = "MIT OR Apache-2.0"
+
+[workspace.dependencies]
+# Internal crates
+ecd-domain = { path = "crates/ecd-domain" }
+ecd-parser = { path = "crates/ecd-parser" }
+ecd-fiscal = { path = "crates/ecd-fiscal" }
+ecd-graph = { path = "crates/ecd-graph" }
+ecd-analytics = { path = "crates/ecd-analytics" }
+ecd-storage = { path = "crates/ecd-storage" }
+
+# Async & Runtime
+tokio = { version = "1.40", features = ["full"] }
+futures = "0.3"
+async-trait = "0.1"
+
+# Web & Networking
+axum = { version = "0.7", features = ["multipart", "macros"] }
+tower = { version = "0.5", features = ["util", "timeout"] }
+tower-http = { version = "0.6", features = ["cors", "compression-full", "trace", "fs"] }
+reqwest = { version = "0.12", default-features = false, features = ["json", "rustls-tls", "stream"] }
+
+# Serialization & Data
+serde = { version = "1.0", features = ["derive"] }
+serde_json = "1.0"
+chrono = { version = "0.4", features = ["serde"] }
+uuid = { version = "1.10", features = ["v7", "v4", "serde"] }
+rust_decimal = { version = "1.36", features = ["serde-float"] }
+
+# Storage & Databases
+sqlx = { version = "0.8", default-features = false, features = ["runtime-tokio", "tls-rustls", "postgres", "chrono", "uuid", "rust_decimal", "json", "migrate"] }
+rusqlite = { version = "0.32", features = ["bundled", "blob"] }
+r2d2 = "0.8"
+r2d2_sqlite = "0.25"
+redis = { version = "0.27", features = ["tokio-comp", "connection-manager", "aio"] }
+
+# Performance, I/O & Text
+memmap2 = "0.9"
+encoding_rs = "0.8"
+strsim = "0.11"
+petgraph = { version = "0.6", features = ["serde-1"] }
+moka = { version = "0.12", features = ["future"] }
+umya-spreadsheet = "2.1"
+
+# Security & Auth
+argon2 = "0.5"
+jsonwebtoken = "9.3"
+
+# Observability & Config
+tracing = "0.1"
+tracing-subscriber = { version = "0.3", features = ["env-filter", "json"] }
+config = "0.14"
+dotenvy = "0.15"
+thiserror = "1.0"
+anyhow = "1.0"
