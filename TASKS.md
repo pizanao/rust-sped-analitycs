@@ -104,10 +104,10 @@ graph TD
 
 ---
 
-## Onda 3: Homologação Final, Empacotamento & Hardening
+## Onda 3: Homologação Final, Empacotamento & Hardening — Concluída [x]
 
-### Trilha 9: Homologação E2E, Paridade, Docker & Hardening
-- [ ] **TASK-901**: Criar `Dockerfile.server`, `Dockerfile.worker`, `apps/web/Dockerfile` e `services/ai-gateway/Dockerfile` multi-stage.
-- [ ] **TASK-902**: Executar bateria de testes de paridade (`tests/parity/test_sped_parity.py`) comparando saídas do Django legado vs Rust.
-- [ ] **TASK-903**: Executar benchmarks de tempo e memória RSS com arquivos SPED de 100MB, 500MB e 1GB+.
-- [ ] **TASK-904**: Hardening de Segurança para Produção (Desativar fallback em memória silencioso no Axum, exigir variável `JWT_SECRET` forte sem valor default estático e remover seeds de usuários fixos em compilações `--release`).
+### Trilha 9: Homologação E2E, Paridade, Docker & Hardening — [Concluída]
+- [x] **TASK-901**: Criar `Dockerfile.server`, `Dockerfile.worker`, `apps/web/Dockerfile` e `services/ai-gateway/Dockerfile` multi-stage.
+- [x] **TASK-902**: Executar bateria de testes de paridade (`tests/parity/test_sped_parity.py`) comparando saídas do Django legado vs Rust.
+- [x] **TASK-903**: Executar benchmarks de tempo e memória RSS com arquivos SPED de 100MB, 500MB e 1GB+.
+- [x] **TASK-904**: Hardening de Segurança para Produção (Desativar fallback em memória silencioso no Axum, exigir variável `JWT_SECRET` forte sem valor default estático e remover seeds de usuários fixos em compilações `--release`).

@@ -85,9 +85,39 @@ pub struct AppState {
 impl AppState {
     /// Inicializa o [`AppState`] a partir de variáveis de ambiente (`.env`),
     /// conectando-se ao PostgreSQL, Redis e bases SQLite locais quando disponíveis.
+    /// Em modo release ou quando `ENVIRONMENT=production`, executa hardening estrito (TASK-904):
+    /// - Exige `JWT_SECRET` com no mínimo 32 caracteres e rejeita segredos padrão de desenvolvimento;
+    /// - Exige conexão válida com o PostgreSQL via `DATABASE_URL` e desativa fallback silencioso em memória;
+    /// - Não injeta credenciais ou usuários hardcoded no sistema.
     pub async fn from_env() -> anyhow::Result<Self> {
-        let jwt_secret = std::env::var("JWT_SECRET")
-            .unwrap_or_else(|_| "ecd-analytics-jwt-secret-key-2026-default".to_string());
+        let is_production = std::env::var("ENVIRONMENT")
+            .map(|e| e.eq_ignore_ascii_case("production") || e.eq_ignore_ascii_case("prod"))
+            .unwrap_or(!cfg!(debug_assertions));
+
+        let jwt_secret = match std::env::var("JWT_SECRET") {
+            Ok(secret) if !secret.trim().is_empty() => {
+                if is_production
+                    && (secret == "ecd-analytics-jwt-secret-key-2026-default" || secret.len() < 32)
+                {
+                    anyhow::bail!(
+                        "Segurança (TASK-904): Em ambiente de produção, JWT_SECRET não pode usar o valor padrão de desenvolvimento e deve conter ao menos 32 caracteres seguros."
+                    );
+                }
+                secret
+            }
+            _ => {
+                if is_production {
+                    anyhow::bail!(
+                        "Segurança (TASK-904): A variável de ambiente JWT_SECRET é obrigatória em ambiente de produção."
+                    );
+                }
+                tracing::warn!(
+                    "Desenvolvimento: Usando JWT_SECRET padrão. Defina uma chave forte para produção."
+                );
+                "ecd-analytics-jwt-secret-key-2026-default".to_string()
+            }
+        };
+
         let internal_api_key = std::env::var("ECD_BACKEND_API_KEY").ok();
         let stage_dir = std::env::var("ECD_STAGE_DIR")
             .map(PathBuf::from)
@@ -102,15 +132,32 @@ impl AppState {
                     Some(FiscalRepository::new(pool)),
                 ),
                 Err(e) => {
+                    if is_production {
+                        anyhow::bail!(
+                            "Segurança (TASK-904): Falha fatal ao conectar ao PostgreSQL em '{}': {}. Fallback em memória desativado em produção.",
+                            db_url,
+                            e
+                        );
+                    }
                     tracing::warn!(
-                        "Não foi possível conectar ao PostgreSQL em '{}': {}. Usando store em memória.",
+                        "Não foi possível conectar ao PostgreSQL em '{}': {}. Usando store em memória (apenas desenvolvimento).",
                         db_url,
                         e
                     );
                     (None, None)
                 }
             },
-            _ => (None, None),
+            _ => {
+                if is_production {
+                    anyhow::bail!(
+                        "Segurança (TASK-904): A variável DATABASE_URL é obrigatória em ambiente de produção. Fallback em memória desativado."
+                    );
+                }
+                tracing::warn!(
+                    "DATABASE_URL não configurada. Usando store em memória para desenvolvimento local."
+                );
+                (None, None)
+            }
         };
 
         let redis_client = match std::env::var("REDIS_URL") {
@@ -125,6 +172,15 @@ impl AppState {
             .build()?;
         let (event_tx, _) = broadcast::channel(512);
 
+        let initial_users = if is_production {
+            tracing::info!(
+                "Segurança (TASK-904): Modo de produção ativo. Nenhuma credencial padrão injetada em memória."
+            );
+            Vec::new()
+        } else {
+            Self::seed_usuarios_padrao()
+        };
+
         Ok(Self {
             auth_repo,
             fiscal_repo,
@@ -137,7 +193,7 @@ impl AppState {
             stage_dir,
             ai_gateway_url,
             event_tx,
-            in_memory_users: Arc::new(RwLock::new(Self::seed_usuarios_padrao())),
+            in_memory_users: Arc::new(RwLock::new(initial_users)),
             in_memory_jobs: Arc::new(RwLock::new(Vec::new())),
             in_memory_queue: Arc::new(RwLock::new(Vec::new())),
             in_memory_empresas: Arc::new(RwLock::new(Self::seed_empresas_padrao())),

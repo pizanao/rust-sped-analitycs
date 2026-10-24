@@ -11,6 +11,7 @@ use ecd_domain::{
     RegistroI051, RegistroI052, RegistroI053, RegistroI150, RegistroI155, RegistroJ005,
     RegistroJ100, RegistroJ210, RegistroJ215,
 };
+use serde::{Deserialize, Serialize};
 use thiserror::Error;
 
 pub mod reader;
@@ -33,7 +34,7 @@ pub enum ParserError {
 }
 
 /// Resultado estruturado de uma leitura completa em streaming de um arquivo SPED ECD.
-#[derive(Clone, Debug)]
+#[derive(Clone, Debug, Serialize, Deserialize)]
 pub struct SpedDocument {
     pub reg_0000: Registro0000,
     pub reg_i010: Vec<RegistroI010>,

@@ -29,8 +29,10 @@ services:
     container_name: speed_ecd_server
     restart: unless-stopped
     environment:
+      ENVIRONMENT: production
       DATABASE_URL: postgres://ecd_user:ecd_password@postgres:5432/ecd_db
       REDIS_URL: redis://redis:6379
+      JWT_SECRET: ecd_analytics_production_jwt_secret_token_key_2026_super_strong_random_seed_ok
       AI_GATEWAY_URL: http://ai-gateway:8000
       PORT: 8080
     ports:
@@ -48,6 +50,7 @@ services:
     container_name: speed_ecd_worker
     restart: unless-stopped
     environment:
+      ENVIRONMENT: production
       DATABASE_URL: postgres://ecd_user:ecd_password@postgres:5432/ecd_db
       REDIS_URL: redis://redis:6379
       TURMALINA_BASES_PATH: /apps/turmalina/bases

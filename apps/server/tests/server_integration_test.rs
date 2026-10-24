@@ -532,3 +532,62 @@ async fn test_edge_cases_and_live_ai_gateway_proxy() {
 
     let _ = tokio::fs::remove_dir_all(&temp_dir).await;
 }
+
+#[tokio::test]
+async fn test_task_904_security_hardening_production_guards() {
+    // 1. Testa que em produção, JWT_SECRET ausente ou default falha fatalmente
+    std::env::set_var("ENVIRONMENT", "production");
+    std::env::remove_var("JWT_SECRET");
+    let err = match AppState::from_env().await {
+        Err(e) => e,
+        Ok(_) => panic!("Deveria falhar com JWT_SECRET ausente"),
+    };
+    assert!(
+        err.to_string().contains("JWT_SECRET é obrigatória"),
+        "Deveria exigir JWT_SECRET em produção, erro: {}",
+        err
+    );
+
+    // 2. Testa que em produção, JWT_SECRET com valor default ou curto falha fatalmente
+    std::env::set_var("JWT_SECRET", "ecd-analytics-jwt-secret-key-2026-default");
+    let err = match AppState::from_env().await {
+        Err(e) => e,
+        Ok(_) => panic!("Deveria falhar com JWT_SECRET default"),
+    };
+    assert!(
+        err.to_string().contains("não pode usar o valor padrão"),
+        "Deveria rejeitar segredo default em produção, erro: {}",
+        err
+    );
+
+    std::env::set_var("JWT_SECRET", "curto_menos_de_32_chars");
+    let err = match AppState::from_env().await {
+        Err(e) => e,
+        Ok(_) => panic!("Deveria falhar com JWT_SECRET curto"),
+    };
+    assert!(
+        err.to_string().contains("ao menos 32 caracteres"),
+        "Deveria rejeitar segredo menor que 32 chars, erro: {}",
+        err
+    );
+
+    // 3. Testa que em produção, DATABASE_URL ausente falha fatalmente (sem fallback silencioso)
+    std::env::set_var(
+        "JWT_SECRET",
+        "uma_chave_super_segura_de_producao_com_mais_de_32_caracteres_longa_e_forte!",
+    );
+    std::env::remove_var("DATABASE_URL");
+    let err = match AppState::from_env().await {
+        Err(e) => e,
+        Ok(_) => panic!("Deveria falhar com DATABASE_URL ausente"),
+    };
+    assert!(
+        err.to_string().contains("DATABASE_URL é obrigatória"),
+        "Deveria exigir DATABASE_URL em produção, erro: {}",
+        err
+    );
+
+    // Limpeza de variáveis de ambiente do teste
+    std::env::remove_var("ENVIRONMENT");
+    std::env::remove_var("JWT_SECRET");
+}
