@@ -372,3 +372,17 @@ CREATE TABLE IF NOT EXISTS core_registroj215 (
 );
 
 CREATE INDEX IF NOT EXISTS idx_regj215_cnpj ON core_registroj215(cnpj);
+
+-- 4. USUÁRIO INICIAL DE TESTES / HOMOLOGAÇÃO
+-- Senha: SenhaForte@Auditor2026!
+INSERT INTO usuarios (id, email, nome, senha_hash, role, ativo)
+VALUES (
+    '018f0000-0000-7000-8000-000000000001',
+    'admin@ecd.gov.br',
+    'Administrador de Testes',
+    '$argon2id$v=19$m=19456,t=2,p=1$VuhvswdLRfSVXkaJIwyZyA$mdylnw2nFK75TPqI6lr1ME9aB80Wn2uuSa/y09XomDU',
+    'Admin',
+    TRUE
+)
+ON CONFLICT (email) DO NOTHING;
+

@@ -8,7 +8,7 @@ services:
       POSTGRES_PASSWORD: ecd_password
       POSTGRES_DB: ecd_db
     ports:
-      - "5432:5432"
+      - "5435:5432"
     volumes:
       - pgdata:/var/lib/postgresql/data
       - ./migrations/0001_initial_schema.sql:/docker-entrypoint-initdb.d/01-init.sql
@@ -18,7 +18,7 @@ services:
     container_name: speed_ecd_redis
     restart: unless-stopped
     ports:
-      - "6379:6379"
+      - "6385:6379"
     volumes:
       - redisdata:/data
 
@@ -71,7 +71,7 @@ services:
       GROQ_API_KEY: ${GROQ_API_KEY}
       ECD_SERVER_URL: http://server:8080
     ports:
-      - "8000:8000"
+      - "8005:8000"
 
   web:
     build:
