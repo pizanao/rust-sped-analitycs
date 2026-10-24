@@ -1,10 +1,14 @@
-# 🏛️ Rust Sped Analytics
+# Rust Sped Analytics
+
+<p align="center">
+  <img src="docs/assets/social-preview.png" alt="Rust Sped Analytics - Banner de Social Media e Apresentação" width="100%" />
+</p>
 
 > **Plataforma Corporativa de Alta Performance para Auditoria Fiscal Contábil (SPED ECD), Apuração de Base Tributável do ISSQN e Inteligência Societária Municipal.**
 
 ---
 
-## 🛠️ Stack Tecnológica
+## Stack Tecnológica
 
 <p align="left">
   <img src="https://img.shields.io/badge/Rust-1.85-orange?style=for-the-badge&logo=rust&logoColor=white" alt="Rust" />
@@ -25,7 +29,7 @@
 
 ---
 
-## 🎯 Apresentação para o Auditor Fiscal Tributário Municipal
+## Apresentação para o Auditor Fiscal Tributário Municipal
 
 Caro(a) **Auditor(a) Fiscal de Tributos Municipais**,
 
@@ -35,33 +39,33 @@ O **SPED ECD** (*Escrituração Contábil Digital*) contém os lançamentos anal
 
 ### O que esta plataforma entrega para a sua rotina fiscal?
 
-1. **⚡ Processamento em Segundos**: Arquivos SPED ECD de 500 MB+ são fatiados e gravados no banco de dados em poucos segundos usando streaming de baixo nível em **Rust**, sem travar a máquina.
-2. **📊 Apuração Automatizada da Receita de Serviços (ISSQN)**:
+1. **Processamento em Segundos**: Arquivos SPED ECD de 500 MB+ são fatiados e gravados no banco de dados em poucos segundos usando streaming de baixo nível em **Rust**, sem travar a máquina.
+2. **Apuração Automatizada da Receita de Serviços (ISSQN)**:
    - Extrai automaticamente as contas de receita a partir da **DRE** (Demonstração do Resultado do Exercício — Registro `J150`) e das Contas de Resultado (Registro `I355`).
    - Identifica se o contribuinte faturou receitas de prestação de serviços não declaradas nas notas fiscais do município.
    - Exporta relatórios analíticos em **planilhas Excel multi-aba** para anexar diretamente aos autos de infração e notificações fiscais.
-3. **🕸️ Rede Societária Municipal & Grupos Econômicos (Rede CNPJ / Turmalina)**:
+3. **Rede Societária Municipal & Grupos Econômicos (Rede CNPJ / Turmalina)**:
    - Identifica em até 10 camadas de profundidade se a empresa fiscalizada possui sócios em comum, empresas coligadas ou interpostas pessoas ("laranjas").
    - Cruza automaticamente os sócios com bases nacionais de sanções: **PEP** (Pessoas Expostas Politicamente), **CEIS**, **CEPIM**, **CNEP** e **Dívida Ativa da PGFN**.
    - Fundamental para caracterização de grupo econômico de fato e desconsideração da personalidade jurídica.
-4. **🤖 Copiloto de Inteligência Artificial Especialista em SPED**:
+4. **Copiloto de Inteligência Artificial Especialista em SPED**:
    - Faça perguntas em português claro (*ex: "Qual foi o faturamento bruto e a receita de serviços no primeiro trimestre de 2025?"*).
    - O assistente consulta a base de dados do SPED e gera relatórios com gráficos dinâmicos para subsidiar seu parecer fiscal.
 
 ---
 
-## 🚀 Guia Rápido: Como Executar a Aplicação Localmente
+## Guia Rápido: Como Executar a Aplicação Localmente
 
 Você não precisa ser um programador experiente para rodar e testar esta plataforma. Desenvolvemos comandos simplificados via **`make`** que preparam todo o ambiente automaticamente.
 
-### 📋 1. Pré-requisitos Básicos no seu Computador
+### 1. Pré-requisitos Básicos no seu Computador
 * **Docker** e **Docker Compose** instalados e em execução.
 * Ferramenta de linha de comando **`make`** (nativa no Linux/macOS ou via WSL2 no Windows).
 * **Python 3** (para o gerador de arquivos de teste SPED).
 
 ---
 
-### 🟢 2. Iniciando Todos os Serviços
+### 2. Iniciando Todos os Serviços
 
 Abra o terminal na pasta do projeto e execute:
 
@@ -87,7 +91,7 @@ make status
 
 ---
 
-### 📂 3. Gerando Arquivos SPED Fictícios para Teste de Auditoria
+### 3. Gerando Arquivos SPED Fictícios para Teste de Auditoria
 
 Para experimentar a plataforma sem precisar utilizar arquivos reais de contribuintes em fase de homologação, utilize o gerador de massa de dados oficial do projeto:
 
@@ -102,15 +106,15 @@ Esse script gera automaticamente na pasta `tests/fixtures/sped/` uma coleção d
 * **`ecd_substituta.txt`**: Escrituração retificadora que substitui a anterior (testando controle de escrituração ativa).
 * **`ecd_volume_10k.txt`**: Arquivo com 10.000 lançamentos contábeis para teste de velocidade e estresse.
 
-> 💡 **Nota de Conformidade Legal**: Todos os CNPJs gerados possuem **Dígito Verificador matematicamente válido** (módulo 11), codificação `Windows-1252` e totalizadores do Bloco 9 (`9900`, `9990`, `9999`) rigorosamente balanceados.
+> **Nota de Conformidade Legal**: Todos os CNPJs gerados possuem **Dígito Verificador matematicamente válido** (módulo 11), codificação `Windows-1252` e totalizadores do Bloco 9 (`9900`, `9990`, `9999`) rigorosamente balanceados.
 
 ---
 
-### 🖥️ 4. Acessando a Interface no Navegador
+### 4. Acessando a Interface no Navegador
 
 Após iniciar o sistema, abra seu navegador de internet no endereço:
 
-👉 **[http://localhost:3000](http://localhost:3000)**
+**[http://localhost:3000](http://localhost:3000)**
 
 #### Roteiro Prático de Auditoria na Interface:
 
@@ -136,7 +140,7 @@ Após iniciar o sistema, abra seu navegador de internet no endereço:
 
 ---
 
-### 📜 5. Acompanhando Logs do Sistema
+### 5. Acompanhando Logs do Sistema
 
 Se desejar inspecionar o que está acontecendo no processamento em tempo real:
 
@@ -154,7 +158,7 @@ make logs-server
 
 ---
 
-### 🛑 6. Como Parar ou Reiniciar o Sistema
+### 6. Como Parar ou Reiniciar o Sistema
 
 Quando terminar os seus testes ou expediente de auditoria:
 
@@ -171,7 +175,7 @@ make clean-all
 
 ---
 
-## 🧰 Tabela de Referência de Comandos `make`
+## Tabela de Referência de Comandos `make`
 
 | Comando | Finalidade para o Auditor / Desenvolvedor |
 | :--- | :--- |
@@ -188,7 +192,7 @@ make clean-all
 
 ---
 
-## 📁 Estrutura de Pastas e Módulos
+## Estrutura de Pastas e Módulos
 
 ```text
 rust-sped-analitycs/
@@ -217,6 +221,6 @@ rust-sped-analitycs/
 
 ---
 
-## 🤝 Desenvolvimento e Contribuição
+## Desenvolvimento e Contribuição
 
 Para orientações sobre desenvolvimento com múltiplos agentes de IA em paralelo e especificações técnicas de cada módulo, consulte [`AGENTS.md`](AGENTS.md) e [`TASKS.md`](TASKS.md).
