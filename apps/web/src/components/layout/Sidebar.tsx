@@ -80,7 +80,7 @@ export const Sidebar: React.FC<SidebarProps> = ({
             {!collapsed && (
               <div className="truncate">
                 <span className="block font-bold text-sm tracking-tight text-slate-900">
-                  ECD Analytics
+                  Rust Sped Analytics
                 </span>
                 <span className="block text-[11px] font-medium text-slate-400">
                   Rust Engine + React

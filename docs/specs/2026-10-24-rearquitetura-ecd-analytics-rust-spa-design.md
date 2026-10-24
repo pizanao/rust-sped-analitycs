@@ -17,7 +17,7 @@ O sistema legado em Django/Python enfrenta limitações críticas de throughput 
 2. **Separação Server / Worker com Fila Redis**: Garantir isolamento absoluto entre o tráfego HTTP da API e os processos pesados de parsing e auditoria, permitindo que a interface permaneça com latência inferior a 15ms mesmo durante a carga de lotes massivos de arquivos.
 3. **Frontend Desacoplado Moderno (SPA)**: Interface rica em componentes com **React + Vite + TypeScript + Shadcn UI + Tailwind CSS**, equipada com tabelas contábeis virtualizadas (*TanStack Table*), gráficos de indicadores (*Recharts*) e visualizador interativo de grafos societários (*Vis-Network*).
 4. **Convivência Híbrida de Bancos de Dados**:
-   - **PostgreSQL**: Preservação estrita e inalterada de todas as tabelas contábeis da app [`core`](file:///home/pizani/Projects/ecd_analytics/apps/core), respeitando o layout oficial da RFB. Otimização e modernização das tabelas de suporte ([`importacao`](file:///home/pizani/Projects/ecd_analytics/apps/importacao), [`fiscal`](file:///home/pizani/Projects/ecd_analytics/apps/fiscal), [`indicadores`](file:///home/pizani/Projects/ecd_analytics/apps/indicadores), [`parametros`](file:///home/pizani/Projects/ecd_analytics/apps/parametros)).
+   - **PostgreSQL**: Preservação estrita e inalterada de todas as tabelas contábeis da app `core` legada, respeitando o layout oficial da RFB. Otimização e modernização das tabelas de suporte (`importacao`, `fiscal`, `indicadores`, `parametros`).
    - **SQLite**: Preservação das bases locais da Rede CNPJ / Turmalina (`cnpj.db`, `rede.db`, `links.db`) para consultas analíticas ultrarrápidas de grafos via `rusqlite`.
 5. **AI Gateway com LangChain**: Microsserviço de orquestração de agentes de inteligência artificial com *Tool Calling*, permitindo aos auditores gerar relatórios analíticos e dashboards gráficos customizados através de linguagem natural.
 
@@ -70,7 +70,7 @@ graph TD
 ## 3. Modelo de Dados & Armazenamento
 
 ### 3.1 Tabelas Preservadas do Bloco Contábil (`core`)
-Conforme a restrição obrigatória de compliance com o SPED ECD da Receita Federal e paridade 100% com [`apps/core/models.py`](file:///home/pizani/Projects/ecd_analytics/apps/core/models.py), as seguintes 14 tabelas mantêm estritamente os nomes de tabelas (`db_table`), colunas, tipos e relacionamentos originais:
+Conforme a restrição obrigatória de compliance com o SPED ECD da Receita Federal e paridade 100% com o schema contábil legado (`apps/core/models.py`), as seguintes 14 tabelas mantêm estritamente os nomes de tabelas (`db_table`), colunas, tipos e relacionamentos originais:
 
 - `core_registro0000`: Identificação do arquivo e entidade (`dt_ini`, `dt_fim`, `nome_razao`, `cnpj`, `uf`, `ie`, `cod_mun`, `im`, `ind_sit_esp`, `ind_sit_ini_per`, `ind_nire`, `ind_fin_esc`, `cod_hash_sub`, `ind_grande_porte`, `tip_ecd`, `cod_scp`, `ident_mf`, `ind_esc_cons`, `ind_centralizada`, `ind_mudanc_pc`, `cod_plan_ref`, `i990`, `j990`, `hash_arquivo_id`).
 - `core_registroi010`: Identificação da escrituração contábil (`ind_esc`, `cod_ver_lc`, `reg_0000_id`).

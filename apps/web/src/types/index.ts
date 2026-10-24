@@ -1,5 +1,5 @@
 /**
- * Definições de Tipos TypeScript para a aplicação ECD Analytics
+ * Definições de Tipos TypeScript para a aplicação Rust Sped Analytics
  * Espelha fielmente as structs em ecd-domain (Rust) e endpoints do Axum/LangChain.
  */
 

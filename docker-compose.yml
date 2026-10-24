@@ -1,7 +1,7 @@
 services:
   postgres:
     image: postgres:16-alpine
-    container_name: speed_ecd_postgres
+    container_name: rust_sped_postgres
     restart: unless-stopped
     environment:
       POSTGRES_USER: ecd_user
@@ -15,7 +15,7 @@ services:
 
   redis:
     image: redis:7-alpine
-    container_name: speed_ecd_redis
+    container_name: rust_sped_redis
     restart: unless-stopped
     ports:
       - "6385:6379"
@@ -26,7 +26,7 @@ services:
     build:
       context: .
       dockerfile: Dockerfile.server
-    container_name: speed_ecd_server
+    container_name: rust_sped_server
     restart: unless-stopped
     environment:
       ENVIRONMENT: production
@@ -47,7 +47,7 @@ services:
     build:
       context: .
       dockerfile: Dockerfile.worker
-    container_name: speed_ecd_worker
+    container_name: rust_sped_worker
     restart: unless-stopped
     environment:
       ENVIRONMENT: production
@@ -65,7 +65,7 @@ services:
     build:
       context: ./services/ai-gateway
       dockerfile: Dockerfile
-    container_name: speed_ecd_ai_gateway
+    container_name: rust_sped_ai_gateway
     restart: unless-stopped
     environment:
       GROQ_API_KEY: ${GROQ_API_KEY}
@@ -77,7 +77,7 @@ services:
     build:
       context: ./apps/web
       dockerfile: Dockerfile
-    container_name: speed_ecd_web
+    container_name: rust_sped_web
     restart: unless-stopped
     ports:
       - "3000:80"

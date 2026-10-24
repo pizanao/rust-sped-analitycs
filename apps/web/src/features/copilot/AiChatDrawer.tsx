@@ -30,7 +30,7 @@ export const AiChatDrawer: React.FC<AiChatDrawerProps> = ({
       id: 'welcome',
       sender: 'assistant',
       content:
-        'Olá! Sou o **Copiloto ECD Analytics**, integrado ao LangChain Gateway.\n\nPosso apurar receitas da DRE, analisar a Rede Societária da Receita Federal, verificar sanções (PEP, CEIS, PGFN) e gerar gráficos dinâmicos para a sua auditoria.',
+        'Olá! Sou o **Copiloto Rust Sped Analytics**, integrado ao LangChain Gateway.\n\nPosso apurar receitas da DRE, analisar a Rede Societária da Receita Federal, verificar sanções (PEP, CEIS, PGFN) e gerar gráficos dinâmicos para a sua auditoria.',
       timestamp: new Date().toLocaleTimeString(),
     },
   ]);

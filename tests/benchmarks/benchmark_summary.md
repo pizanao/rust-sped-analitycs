@@ -2,13 +2,13 @@
 
 **Data do Benchmark:** 24 de Outubro de 2026  
 **Ambiente:** Linux x86_64 (`kernel 6.x`), 32 GB RAM, SSD NVMe, CPU AMD/Intel Multi-Core  
-**Escopo:** Comparativo entre o Motor Legado em Python/Django (`apps/core/tratamento.py` + Django ORM) e o Novo Motor Rust de Alta Performance (`speed_rust_app`: `ecd-parser`, `ecd-fiscal`, `ecd-worker`).
+**Escopo:** Comparativo entre o Motor Legado em Python/Django (`apps/core/tratamento.py` + Django ORM) e o Novo Motor Rust de Alta Performance (`rust_sped_analytics`: `ecd-parser`, `ecd-fiscal`, `ecd-worker`).
 
 ---
 
 ## 1. Resumo Executivo dos Resultados
 
-| Métrica / Volume | Legado Django (Python) | Novo Motor Rust (`speed_rust_app`) | Ganho / Aceleração |
+| Métrica / Volume | Legado Django (Python) | Novo Motor Rust (`rust_sped_analytics`) | Ganho / Aceleração |
 |---|---|---|---|
 | **SPED 100 MB** (~1,78 milhão de linhas) | ~3m 45s (225 s) | **1,85 segundos** | **~121x mais rápido** |
 | **SPED 500 MB** (~8,89 milhões de linhas) | ~18m 30s (1.110 s) | **9,60 segundos** | **~115x mais rápido** |

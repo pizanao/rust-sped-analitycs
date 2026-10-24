@@ -109,7 +109,7 @@ fn main() {
     let temp_dir = std::env::temp_dir();
     let temp_file = temp_dir.join(format!("benchmark_sped_{}mb.txt", target_mb));
 
-    println!("=== ECD BENCHMARK RUNNER (RUST HIGH-PERFORMANCE) ===");
+    println!("=== RUST SPED ANALYTICS - BENCHMARK RUNNER ===");
     println!("Alvo: {} MB em {:?}", target_mb, temp_file);
 
     let gen_start = Instant::now();
