@@ -90,7 +90,7 @@ class MockFiscalChatModel(BaseChatModel):
         # Resposta padrão analítica direta
         resposta = (
             "### Análise Fiscal e Contábil\n\n"
-            "Consulta processada pelo Copiloto de IA da plataforma ECD Analytics.\n"
+            "Consulta processada pelo Copiloto de IA da plataforma Rust Sped Analytics.\n"
             "O ambiente está operacional e pronto para inspecionar blocos SPED (0000, J100, J150 e I155) e redes de relacionamento."
         )
         return ChatResult(generations=[ChatGeneration(message=AIMessage(content=resposta))])

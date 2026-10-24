@@ -1,5 +1,5 @@
 # ==============================================================================
-# ECD Analytics - Background Consumer Worker Dockerfile (Multi-stage Build)
+# Rust Sped Analytics - Background Consumer Worker Dockerfile (Multi-stage Build)
 # ==============================================================================
 
 FROM rust:1.85-slim-bookworm AS builder

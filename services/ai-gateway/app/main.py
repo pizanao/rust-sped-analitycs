@@ -1,5 +1,5 @@
 """
-AI Gateway com LangChain & LangGraph para ECD Analytics.
+AI Gateway com LangChain & LangGraph para Rust Sped Analytics.
 Fornece agentes de IA com Tool Calling sobre o backend Rust e geração de dashboards Recharts em tempo real.
 """
 
@@ -27,7 +27,7 @@ async def lifespan(app: FastAPI):
 settings = get_settings()
 
 app = FastAPI(
-    title="ECD Analytics AI Gateway",
+    title="Rust Sped Analytics AI Gateway",
     version="0.1.0",
     description="Gateway de Agentes de IA com LangChain e ferramentas de auditoria contábil, fiscal e societária.",
     lifespan=lifespan,

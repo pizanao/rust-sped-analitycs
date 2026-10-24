@@ -1,5 +1,5 @@
 -- ==============================================================================
--- Migração Inicial: Schema Híbrido ECD Analytics (Preservação Core 100% + Otimização)
+-- Migração Inicial: Schema Híbrido Rust Sped Analytics (Preservação Core 100% + Otimização)
 -- ==============================================================================
 
 -- 1. Extensões

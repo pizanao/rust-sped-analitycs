@@ -1,139 +1,222 @@
-# Rust Sped Analytics — ECD Analytics Platform
+# 🏛️ Rust Sped Analytics
 
-> **Plataforma Corporativa de Alta Performance em Rust + React SPA + AI Gateway (LangChain/LangGraph) para Auditoria Contábil SPED ECD, Apuração Fiscal de Receitas e Inteligência Societária (Rede CNPJ / Turmalina).**
-
----
-
-## 1. Visão Geral da Arquitetura
-
-O **Rust Sped Analytics** é a rearquitetura moderna e desacoplada do **ECD Analytics**, projetada para processar arquivos massivos da Escrituração Contábil Digital (SPED ECD de 100 MB a 2 GB+) em segundos com uso mínimo de RAM, preservando **100% de compatibilidade com o modelo de dados contábil oficial da Receita Federal do Brasil (RFB)**.
-
-### Principais Pilares Técnicos
-* **Motor de Ingestão Zero-Copy (`ecd-parser` + `apps/worker`)**:
-  * Leitura via mapeamento de memória virtual (`memmap2::Mmap`), fatiamento zero-copy em `&[u8]` e decodificação `WINDOWS_1252`.
-  * Persistência transacional em lotes (`batch inserts` de 5.000 registros por query via `SQLx`) desacoplada da API HTTP por fila Redis (`ecd:queue:jobs`).
-* **Motor Fiscal de Paridade Estrita (`ecd-fiscal`)**:
-  * Identificação automática de Receita Bruta, Receita de Serviços e Outras Receitas na DRE (`regj150_demonstracao_resultado`) e no bloco `I355` (`regi355_detalhes_contas_resultado`) usando `partial_ratio >= 0.80` sobre os 24 termos fiscais e os 12 filtros negativos do sistema legado.
-  * Exportação nativa de planilhas Excel multi-aba (`umya-spreadsheet`).
-* **Motor de Grafos Societários GRC (`ecd-graph`)**:
-  * Consultas somente-leitura ultrarrápidas (`rusqlite` + `r2d2_sqlite` com `mmap_size = 256MB`) sobre as bases locais da Receita Federal (`cnpj.db`, `rede.db`, `links.db`).
-  * Expansão em largura (BFS de 1 a 10 camadas com poda anti-explosão), menor caminho via Dijkstra (`petgraph`) e cruzamento atômico de sanções (**PEP, CEIS, CEPIM, CNEP, PGFN**).
-* **Motor de Indicadores Econômicos (`ecd-analytics`)**:
-  * Agregações estatísticas por CNAE, Porte Empresarial, Regime Tributário (Simples/MEI) e Capital Social com cache assíncrono em memória (`moka`).
-* **AI Gateway Cognitivo (`services/ai-gateway`)**:
-  * Microsserviço Python (**FastAPI + LangChain + LangGraph**) com *Tool Calling* sobre o servidor Rust para auditoria em linguagem natural e geração dinâmica de gráficos JSON.
-* **Frontend SPA Desacoplado (`apps/web`)**:
-  * **React 18 + Vite + TypeScript + Tailwind CSS + Shadcn UI**.
-  * Tabelas contábeis de alta densidade (`TanStack Table`), grafos interativos (`Vis-Network`), dashboards (`Recharts`) e acompanhamento de ingestão em tempo real via Server-Sent Events (`SSE`).
+> **Plataforma Corporativa de Alta Performance para Auditoria Fiscal Contábil (SPED ECD), Apuração de Base Tributável do ISSQN e Inteligência Societária Municipal.**
 
 ---
 
-## 2. Estrutura do Monorepo
+## 🛠️ Stack Tecnológica
+
+<p align="left">
+  <img src="https://img.shields.io/badge/Rust-1.85-orange?style=for-the-badge&logo=rust&logoColor=white" alt="Rust" />
+  <img src="https://img.shields.io/badge/Axum-0.7-black?style=for-the-badge&logo=rust&logoColor=white" alt="Axum" />
+  <img src="https://img.shields.io/badge/React-18.3-61DAFB?style=for-the-badge&logo=react&logoColor=black" alt="React" />
+  <img src="https://img.shields.io/badge/TypeScript-5.6-3178C6?style=for-the-badge&logo=typescript&logoColor=white" alt="TypeScript" />
+  <img src="https://img.shields.io/badge/Vite-5.4-646CFF?style=for-the-badge&logo=vite&logoColor=white" alt="Vite" />
+  <img src="https://img.shields.io/badge/Tailwind_CSS-3.4-38B2AC?style=for-the-badge&logo=tailwind-css&logoColor=white" alt="Tailwind CSS" />
+  <img src="https://img.shields.io/badge/Python-3.11-3776AB?style=for-the-badge&logo=python&logoColor=white" alt="Python" />
+  <img src="https://img.shields.io/badge/FastAPI-0.115-009688?style=for-the-badge&logo=fastapi&logoColor=white" alt="FastAPI" />
+  <img src="https://img.shields.io/badge/LangGraph-ReAct-FF6F00?style=for-the-badge&logo=langchain&logoColor=white" alt="LangGraph" />
+  <img src="https://img.shields.io/badge/PostgreSQL-16-336791?style=for-the-badge&logo=postgresql&logoColor=white" alt="PostgreSQL" />
+  <img src="https://img.shields.io/badge/Redis-7-DC382D?style=for-the-badge&logo=redis&logoColor=white" alt="Redis" />
+  <img src="https://img.shields.io/badge/SQLite-3-003B57?style=for-the-badge&logo=sqlite&logoColor=white" alt="SQLite" />
+  <img src="https://img.shields.io/badge/Docker-Compose-2496ED?style=for-the-badge&logo=docker&logoColor=white" alt="Docker" />
+  <img src="https://img.shields.io/badge/GNU_Make-4-00599C?style=for-the-badge&logo=gnu&logoColor=white" alt="GNU Make" />
+</p>
+
+---
+
+## 🎯 Apresentação para o Auditor Fiscal Tributário Municipal
+
+Caro(a) **Auditor(a) Fiscal de Tributos Municipais**,
+
+A fiscalização eficiente do **ISSQN** (Imposto Sobre Serviços de Qualquer Natureza) e a identificação de fraudes fiscais demandam cada vez mais o cruzamento das declarações emitidas pelo contribuinte (NFS-e, PGMEI, DeSTDA) com as suas escriturações contábeis oficiais transmitidas à Receita Federal do Brasil.
+
+O **SPED ECD** (*Escrituração Contábil Digital*) contém os lançamentos analíticos (Livro Diário) e sintéticos (Razão, Balancete e Demonstrações Contábeis) da pessoa jurídica. No entanto, arquivos de escrituração contábil frequentemente ultrapassam centenas de megabytes (100 MB a 2 GB), tornando a abertura e a auditoria em softwares convencionais (como Excel ou ferramentas legadas) inviáveis por esgotamento de memória.
+
+### O que esta plataforma entrega para a sua rotina fiscal?
+
+1. **⚡ Processamento em Segundos**: Arquivos SPED ECD de 500 MB+ são fatiados e gravados no banco de dados em poucos segundos usando streaming de baixo nível em **Rust**, sem travar a máquina.
+2. **📊 Apuração Automatizada da Receita de Serviços (ISSQN)**:
+   - Extrai automaticamente as contas de receita a partir da **DRE** (Demonstração do Resultado do Exercício — Registro `J150`) e das Contas de Resultado (Registro `I355`).
+   - Identifica se o contribuinte faturou receitas de prestação de serviços não declaradas nas notas fiscais do município.
+   - Exporta relatórios analíticos em **planilhas Excel multi-aba** para anexar diretamente aos autos de infração e notificações fiscais.
+3. **🕸️ Rede Societária Municipal & Grupos Econômicos (Rede CNPJ / Turmalina)**:
+   - Identifica em até 10 camadas de profundidade se a empresa fiscalizada possui sócios em comum, empresas coligadas ou interpostas pessoas ("laranjas").
+   - Cruza automaticamente os sócios com bases nacionais de sanções: **PEP** (Pessoas Expostas Politicamente), **CEIS**, **CEPIM**, **CNEP** e **Dívida Ativa da PGFN**.
+   - Fundamental para caracterização de grupo econômico de fato e desconsideração da personalidade jurídica.
+4. **🤖 Copiloto de Inteligência Artificial Especialista em SPED**:
+   - Faça perguntas em português claro (*ex: "Qual foi o faturamento bruto e a receita de serviços no primeiro trimestre de 2025?"*).
+   - O assistente consulta a base de dados do SPED e gera relatórios com gráficos dinâmicos para subsidiar seu parecer fiscal.
+
+---
+
+## 🚀 Guia Rápido: Como Executar a Aplicação Localmente
+
+Você não precisa ser um programador experiente para rodar e testar esta plataforma. Desenvolvemos comandos simplificados via **`make`** que preparam todo o ambiente automaticamente.
+
+### 📋 1. Pré-requisitos Básicos no seu Computador
+* **Docker** e **Docker Compose** instalados e em execução.
+* Ferramenta de linha de comando **`make`** (nativa no Linux/macOS ou via WSL2 no Windows).
+* **Python 3** (para o gerador de arquivos de teste SPED).
+
+---
+
+### 🟢 2. Iniciando Todos os Serviços
+
+Abra o terminal na pasta do projeto e execute:
+
+```bash
+make start
+```
+
+> **O que esse comando faz nos bastidores?**
+> 1. Cria as pastas de trabalho (`media/ecd_stage/` para arquivos aguardando, processados e com erro).
+> 2. Configura automaticamente o arquivo de ambiente `.env` com configurações padrão seguras.
+> 3. Inicializa todos os containers em segundo plano:
+>    - **PostgreSQL 16**: Banco de dados relacional com o schema oficial do SPED ECD.
+>    - **Redis 7**: Fila assíncrona de alto desempenho.
+>    - **Server (Rust / Axum)**: API central de autenticação e consultas.
+>    - **Worker (Rust)**: Motor de parsing veloz que processa as escriturações.
+>    - **AI Gateway (FastAPI)**: Assistente cognitivo com LangChain/LangGraph.
+>    - **Web (React SPA)**: Painel web acessível no seu navegador.
+
+Para verificar se todos os serviços estão saudáveis:
+```bash
+make status
+```
+
+---
+
+### 📂 3. Gerando Arquivos SPED Fictícios para Teste de Auditoria
+
+Para experimentar a plataforma sem precisar utilizar arquivos reais de contribuintes em fase de homologação, utilize o gerador de massa de dados oficial do projeto:
+
+```bash
+make generate-mock
+```
+*(ou se preferir executar diretamente com Python: `python3 scripts/gerar_massa_sped.py`)*
+
+Esse script gera automaticamente na pasta `tests/fixtures/sped/` uma coleção de arquivos SPED válidos:
+* **`ecd_minimo_pva.txt`**: Estrutura mínima compatível com o Programa Validador e Assinador da RFB (PVA).
+* **`ecd_homologacao_completa.txt`**: Arquivo completo contendo Balanço Patrimonial (`J100`), DRE com Receita de Serviços (`J150`) e Balancete Analítico (`I155`).
+* **`ecd_substituta.txt`**: Escrituração retificadora que substitui a anterior (testando controle de escrituração ativa).
+* **`ecd_volume_10k.txt`**: Arquivo com 10.000 lançamentos contábeis para teste de velocidade e estresse.
+
+> 💡 **Nota de Conformidade Legal**: Todos os CNPJs gerados possuem **Dígito Verificador matematicamente válido** (módulo 11), codificação `Windows-1252` e totalizadores do Bloco 9 (`9900`, `9990`, `9999`) rigorosamente balanceados.
+
+---
+
+### 🖥️ 4. Acessando a Interface no Navegador
+
+Após iniciar o sistema, abra seu navegador de internet no endereço:
+
+👉 **[http://localhost:3000](http://localhost:3000)**
+
+#### Roteiro Prático de Auditoria na Interface:
+
+1. **Ingestão de Escrituração**:
+   - Acesse o menu **Ingestão**.
+   - Arraste para o campo de upload o arquivo `tests/fixtures/sped/ecd_homologacao_completa.txt`.
+   - Acompanhe o processamento do arquivo em tempo real pelo log de eventos na tela.
+2. **Auditoria Contábil**:
+   - Acesse o menu **Auditoria**.
+   - Digite o CNPJ da empresa presente no arquivo ou pesquise na listagem.
+   - Visualize as abas oficiais:
+     - **0000**: Dados cadastrais da empresa e período da escrituração.
+     - **J100**: Balanço Patrimonial (Ativo, Passivo e Patrimônio Líquido).
+     - **J150**: DRE com destaque automático para as contas de **Receita de Serviços**.
+     - **I155**: Balancete mensal analítico com saldos iniciais, débitos, créditos e saldos finais.
+   - Clique em **Exportar Excel** para baixar o relatório completo consolidado em `.xlsx`.
+3. **Inteligência Societária (GRC / Turmalina)**:
+   - Acesse o menu **Rede Societária**.
+   - Insira um CNPJ para visualizar o grafo interativo de relacionamentos, sócios comuns e participações societárias.
+   - Verifique alertas de restrições ou sanções governamentais associadas aos sócios.
+4. **Copiloto de IA**:
+   - Abra a gaveta do **Copiloto de IA** e faça perguntas analíticas sobre os números auditados.
+
+---
+
+### 📜 5. Acompanhando Logs do Sistema
+
+Se desejar inspecionar o que está acontecendo no processamento em tempo real:
+
+```bash
+# Ver logs gerais de todos os serviços
+make logs
+
+# Ver apenas os logs do processador de SPED (Worker)
+make logs-worker
+
+# Ver apenas os logs do Servidor de APIs
+make logs-server
+```
+*(Para sair da tela de logs a qualquer momento, pressione `Ctrl + C`)*
+
+---
+
+### 🛑 6. Como Parar ou Reiniciar o Sistema
+
+Quando terminar os seus testes ou expediente de auditoria:
+
+```bash
+# Para pausar a execução
+make stop
+
+# Para reiniciar caso precise
+make restart
+
+# Para limpar o ambiente completamente (incluindo dados do banco)
+make clean-all
+```
+
+---
+
+## 🧰 Tabela de Referência de Comandos `make`
+
+| Comando | Finalidade para o Auditor / Desenvolvedor |
+| :--- | :--- |
+| `make help` | Exibe a lista completa de comandos explicados |
+| `make start` | Sobe a aplicação inteira em Docker em background |
+| `make stop` | Para com segurança todos os serviços |
+| `make restart` | Reinicia todos os containers |
+| `make status` | Informa se os serviços e bancos de dados estão online |
+| `make generate-mock`| Cria os arquivos de teste SPED na pasta `tests/fixtures/sped/` |
+| `make logs` | Mostra os registros de processamento e auditoria em tempo real |
+| `make package` | Gera o pacote compactado de distribuição (`dist/*.tar.gz`) |
+| `make test` | Roda a bateria de testes automatizados de validação contábil |
+| `make db-shell` | Abre o terminal interativo do PostgreSQL (`psql`) |
+
+---
+
+## 📁 Estrutura de Pastas e Módulos
 
 ```text
 rust-sped-analitycs/
-├── Cargo.toml                       # Workspace Cargo raiz (6 crates + 2 binários)
-├── MEMORY.md                        # Memória arquitetural, decisões de paridade e ajustes
-├── AGENT_GUIDE.md                   # Protocolo de isolamento para execução multi-agentes
-├── TASKS.md                         # Quadro de tarefas (DAG) dividido em Ondas 1, 2 e 3
-├── docker-compose.yml               # Orquestração local (Postgres 16, Redis 7, Server, Worker, Web, AI)
-├── migrations/
-│   └── 0001_initial_schema.sql      # Schema PostgreSQL: 100% paridade Core RFB + tabelas UUIDv7
-├── docs/
-│   ├── specs/
-│   │   └── 2026-10-24-rearquitetura-ecd-analytics-rust-spa-design.md
-│   └── plans/
-│       └── 2026-10-24-plano-implementacao-multi-agentes.md
-├── crates/
-│   ├── ecd-domain/                  # Structs SPED (0000, I010..I355, J005..J215), CNPJ e contratos Redis
-│   ├── ecd-parser/                  # Leitor streaming zero-copy (memmap2 + encoding_rs)
-│   ├── ecd-fiscal/                  # Extrator DRE (partial_ratio >= 0.80) e exportador XLSX
-│   ├── ecd-graph/                   # Grafo societário Rede CNPJ (petgraph + rusqlite)
-│   ├── ecd-analytics/               # Indicadores econômicos CNAE/Porte e cache moka
-│   └── ecd-storage/                 # Repositórios SQLx (sped_repository, fiscal_repository, auth_repository)
+├── Makefile                       # Comandos simplificados de execução, build e testes
+├── Cargo.toml                     # Configuração central do projeto Rust (workspace)
+├── AGENTS.md                      # Protocolo de concorrência e guia de agentes de IA
+├── docker-compose.yml             # Orquestrador dos containers (Postgres, Redis, Web, API)
 ├── apps/
-│   ├── server/                      # API HTTP Axum (REST, Auth Argon2id/JWT HttpOnly, SSE, Upload)
-│   ├── worker/                      # Consumer assíncrono Redis (Parsing SPED + Batch Inserts)
-│   └── web/                         # Frontend SPA (React + Vite + TypeScript + Shadcn UI)
-└── services/
-    └── ai-gateway/                  # Microsserviço FastAPI + LangChain / LangGraph
+│   ├── server/                    # API Axum REST e Server-Sent Events (SSE)
+│   ├── worker/                    # Motor de processamento rápido dos arquivos SPED
+│   └── web/                       # Frontend SPA (React + Tailwind + Shadcn UI)
+├── crates/
+│   ├── ecd-domain/                # Estruturas oficiais da Receita Federal (Registros SPED)
+│   ├── ecd-parser/                # Leitor de alta velocidade com memória virtual (memmap2)
+│   ├── ecd-fiscal/                # Apuração da DRE, termos de receita e gerador de Excel
+│   ├── ecd-graph/                 # Grafo de sócios e busca de grupos econômicos
+│   ├── ecd-analytics/             # Estatísticas de CNAE, porte e cache em memória
+│   └── ecd-storage/               # Acesso ao banco de dados PostgreSQL
+├── services/
+│   └── ai-gateway/                # Copiloto de IA em Python (FastAPI + LangGraph)
+├── scripts/
+│   ├── gerar_massa_sped.py        # Gerador oficial de arquivos SPED sintéticos
+│   └── package.sh                 # Script de empacotamento para distribuição
+└── tests/fixtures/sped/           # Pasta onde os arquivos SPED gerados são armazenados
 ```
 
 ---
 
-## 3. Convivência de Dados Híbrida (PostgreSQL + SQLite)
+## 🤝 Desenvolvimento e Contribuição
 
-### 3.1 Tabelas Contábeis Preservadas no PostgreSQL (`core`)
-Todas as tabelas contábeis originais mantêm 100% de compatibilidade de nomes e colunas com o sistema legado:
-* **Bloco 0**: `core_registro0000`
-* **Bloco I**: `core_registroi010`, `core_registroi030`, `core_registroi050`, `core_registroi051`, `core_registroi052`, `core_registroi053`, `regi050_plano_contas`, `core_registroi150`, `core_registroi155`, `regi355_detalhes_contas_resultado`
-* **Bloco J**: `core_registroj005`, `core_registroj100`, `regj150_demonstracao_resultado`, `core_registroj210`, `core_registroj215`
-* **Catálogo RFB**: `plano_contas_base`
-
-### 3.2 Tabelas de Suporte Otimizadas no PostgreSQL
-* `usuarios` (Argon2id, RBAC: `Admin`, `Analista`, `Visualizador`)
-* `configuracoes_sistema` (Parâmetros em `JSONB`)
-* `importacoes_ecd` (Controle de jobs, métricas de linhas e tempo em ms)
-* `resultados_exercicio` (Apuração consolidada de receitas com `JSONB` indexado via GIN e constraint `UNIQUE NULLS NOT DISTINCT`)
-
-### 3.3 Bases SQLite Locais (Rede CNPJ / Turmalina)
-* `cnpj.db`: Empresas, estabelecimentos, CNAE, Simples Nacional e sócios.
-* `rede.db`: Arestas pré-indexadas de vínculos societários.
-* `links.db`: Base consolidada de sanções e restrições (**PEP, CEIS, CEPIM, CNEP, PGFN**).
-
----
-
-## 4. Guia Rápido de Desenvolvimento e Verificação
-
-### Pré-requisitos
-* **Rust**: `1.80+` (`rustup`, `cargo`, `clippy`, `rustfmt`)
-* **Node.js**: `20+` (`npm`)
-* **Python**: `3.11+`
-* **Infraestrutura**: PostgreSQL 16 e Redis 7 (ou via `docker compose`)
-
-### 1. Compilar e Testar o Workspace Rust
-```bash
-# Checagem rápida de todos os 6 crates e 2 binários
-cargo check --workspace
-
-# Executar todos os testes unitários e de integração (82 testes)
-cargo test --workspace
-
-# Verificar formatação e lints
-cargo fmt --check
-cargo clippy --workspace -- -D warnings
-```
-
-### 2. Executar e Testar o Frontend SPA (`apps/web`)
-```bash
-cd apps/web
-npm install
-npm test            # 15 testes de tipagem, rotas e contratos
-npm run dev         # Iniciar servidor Vite (http://localhost:3000)
-```
-
-### 3. Executar e Testar o AI Gateway (`services/ai-gateway`)
-```bash
-cd services/ai-gateway
-python3 -m venv .venv
-source .venv/bin/activate
-pip install -r requirements.txt
-pytest tests/ -v    # 43 testes de agentes, ferramentas e schemas Recharts
-uvicorn app.main:app --reload --port 8000
-```
-
-### 4. Executar Testes de Paridade Rigorosa com o Django Legado
-```bash
-# Executa a bateria de 7 testes de paridade (algoritmo Hyyrö, normalização, termos e SPED completo)
-services/ai-gateway/.venv/bin/pytest tests/parity/test_sped_parity.py -v
-```
-
----
-
-## 5. Execução Paralela por Múltiplos Agentes
-
-O projeto está organizado para desenvolvimento paralelo sem conflitos de arquivos. Antes de iniciar qualquer implementação, consulte:
-1. [`MEMORY.md`](MEMORY.md) — Regras de paridade e decisões técnicas.
-2. [`AGENT_GUIDE.md`](AGENT_GUIDE.md) — Escopo exclusivo de diretórios por agente (`Agente 1` a `Agente 8`) e protocolo de verificação.
-3. [`TASKS.md`](TASKS.md) — Quadro de tarefas e grafo de dependências em 3 ondas.
-4. [`docs/plans/2026-10-24-plano-implementacao-multi-agentes.md`](docs/plans/2026-10-24-plano-implementacao-multi-agentes.md) — Passo a passo TDD por tarefa.
+Para orientações sobre desenvolvimento com múltiplos agentes de IA em paralelo e especificações técnicas de cada módulo, consulte [`AGENTS.md`](AGENTS.md) e [`TASKS.md`](TASKS.md).
