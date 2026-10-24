@@ -1,0 +1,86 @@
+services:
+  postgres:
+    image: postgres:16-alpine
+    container_name: speed_ecd_postgres
+    restart: unless-stopped
+    environment:
+      POSTGRES_USER: ecd_user
+      POSTGRES_PASSWORD: ecd_password
+      POSTGRES_DB: ecd_db
+    ports:
+      - "5432:5432"
+    volumes:
+      - pgdata:/var/lib/postgresql/data
+      - ./migrations/0001_initial_schema.sql:/docker-entrypoint-initdb.d/01-init.sql
+
+  redis:
+    image: redis:7-alpine
+    container_name: speed_ecd_redis
+    restart: unless-stopped
+    ports:
+      - "6379:6379"
+    volumes:
+      - redisdata:/data
+
+  server:
+    build:
+      context: .
+      dockerfile: Dockerfile.server
+    container_name: speed_ecd_server
+    restart: unless-stopped
+    environment:
+      DATABASE_URL: postgres://ecd_user:ecd_password@postgres:5432/ecd_db
+      REDIS_URL: redis://redis:6379
+      AI_GATEWAY_URL: http://ai-gateway:8000
+      PORT: 8080
+    ports:
+      - "8080:8080"
+    depends_on:
+      - postgres
+      - redis
+    volumes:
+      - ./media:/app/media
+
+  worker:
+    build:
+      context: .
+      dockerfile: Dockerfile.worker
+    container_name: speed_ecd_worker
+    restart: unless-stopped
+    environment:
+      DATABASE_URL: postgres://ecd_user:ecd_password@postgres:5432/ecd_db
+      REDIS_URL: redis://redis:6379
+      TURMALINA_BASES_PATH: /apps/turmalina/bases
+    depends_on:
+      - postgres
+      - redis
+    volumes:
+      - ./media:/app/media
+      - /apps/turmalina/bases:/apps/turmalina/bases:ro
+
+  ai-gateway:
+    build:
+      context: ./services/ai-gateway
+      dockerfile: Dockerfile
+    container_name: speed_ecd_ai_gateway
+    restart: unless-stopped
+    environment:
+      GROQ_API_KEY: ${GROQ_API_KEY}
+      ECD_SERVER_URL: http://server:8080
+    ports:
+      - "8000:8000"
+
+  web:
+    build:
+      context: ./apps/web
+      dockerfile: Dockerfile
+    container_name: speed_ecd_web
+    restart: unless-stopped
+    ports:
+      - "3000:80"
+    depends_on:
+      - server
+
+volumes:
+  pgdata:
+  redisdata:
