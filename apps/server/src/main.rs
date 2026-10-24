@@ -7,8 +7,7 @@
 //! - Server-Sent Events (SSE) para logs em tempo real
 //! - Proxy reverso para o AI Gateway
 
-use axum::{routing::get, Json, Router};
-use serde_json::json;
+use ecd_server::{build_router, AppState};
 use std::net::SocketAddr;
 use tracing_subscriber::{layer::SubscriberExt, util::SubscriberInitExt};
 
@@ -23,12 +22,15 @@ async fn main() -> anyhow::Result<()> {
         .with(tracing_subscriber::fmt::layer())
         .init();
 
-    let app = Router::new().route(
-        "/health",
-        get(|| async { Json(json!({"status": "ok", "service": "ecd-server"})) }),
-    );
+    let state = AppState::from_env().await?;
+    let app = build_router(state);
 
-    let addr = SocketAddr::from(([0, 0, 0, 0], 8080));
+    let port: u16 = std::env::var("PORT")
+        .ok()
+        .and_then(|p| p.parse().ok())
+        .unwrap_or(8080);
+
+    let addr = SocketAddr::from(([0, 0, 0, 0], port));
     tracing::info!("Servidor Axum iniciado em http://{}", addr);
 
     let listener = tokio::net::TcpListener::bind(addr).await?;

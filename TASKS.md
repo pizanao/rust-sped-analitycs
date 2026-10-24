@@ -88,25 +88,26 @@ graph TD
 
 ---
 
-## Onda 2: Trilhas de Integração Backend (Agentes 7 e 8 em Paralelo)
+## Onda 2: Trilhas de Integração Backend (Agentes 7 e 8 em Paralelo) — Concluída [x]
 
 ### Trilha 7: Worker Assíncrono & Batch Storage (`apps/worker` + `sped_repository.rs`) — [Agente 7]
-- [ ] **TASK-701**: Implementar `crates/ecd-storage/src/sped_repository.rs` com inserções em lote (`QueryBuilder` de 5.000 linhas) em transação atômica para todas as tabelas `core_*` e `reg*`.
-- [ ] **TASK-702**: Implementar consumer Redis (`BRPOP ecd:queue:jobs`) em `apps/worker` com reconexão automática.
-- [ ] **TASK-703**: Integrar pipeline `memmap2` (`ecd-parser`) -> `sped_repository` -> `ecd-fiscal` (`resultados_exercicio`) e exclusão lógica de escriturações substituídas (`cod_hash_sub`).
-- [ ] **TASK-704**: Publicar eventos `JobStatusEvent` no canal Redis Pub/Sub (`ecd:events:status`) e mover arquivo para `processados/` ou `erro/`.
+- [x] **TASK-701**: Implementar `crates/ecd-storage/src/sped_repository.rs` com inserções em lote (`QueryBuilder` de 5.000 linhas) em transação atômica para todas as tabelas `core_*` e `reg*`.
+- [x] **TASK-702**: Implementar consumer Redis (`BRPOP ecd:queue:jobs`) em `apps/worker` com reconexão automática.
+- [x] **TASK-703**: Integrar pipeline `memmap2` (`ecd-parser`) -> `sped_repository` -> `ecd-fiscal` (`resultados_exercicio`) e exclusão lógica de escriturações substituídas (`cod_hash_sub`).
+- [x] **TASK-704**: Publicar eventos `JobStatusEvent` no canal Redis Pub/Sub (`ecd:events:status`) e mover arquivo para `processados/` ou `erro/`.
 
 ### Trilha 8: Servidor HTTP Axum (`apps/server` + `auth/fiscal_repository.rs`) — [Agente 8]
-- [ ] **TASK-801**: Implementar `auth_repository.rs` e autenticação Argon2id + JWT em cookies `HttpOnly; Secure; SameSite=Lax` (`/api/auth/*`) e middleware RBAC.
-- [ ] **TASK-802**: Implementar upload multipart streaming (`/api/importacoes/upload`) gravando em `media/ecd_stage/aguardando/` e publicando `ImportSpedJobPayload` no Redis.
-- [ ] **TASK-803**: Implementar endpoint Server-Sent Events (`/api/jobs/{id}/stream`) subscrito no canal Redis `ecd:events:status`.
-- [ ] **TASK-804**: Implementar `fiscal_repository.rs` e rotas de consulta contábil/DRE (`/api/fiscal/*`), grafos (`/api/grc/*`), indicadores (`/api/indicadores/*`) e proxy reverso para o AI Gateway (`/api/ai/chat`).
+- [x] **TASK-801**: Implementar `auth_repository.rs` e autenticação Argon2id + JWT em cookies `HttpOnly; Secure; SameSite=Lax` (`/api/auth/*`) e middleware RBAC.
+- [x] **TASK-802**: Implementar upload multipart streaming (`/api/importacoes/upload`) gravando em `media/ecd_stage/aguardando/` e publicando `ImportSpedJobPayload` no Redis.
+- [x] **TASK-803**: Implementar endpoint Server-Sent Events (`/api/jobs/{id}/stream`) subscrito no canal Redis `ecd:events:status`.
+- [x] **TASK-804**: Implementar `fiscal_repository.rs` e rotas de consulta contábil/DRE (`/api/fiscal/*`), grafos (`/api/grc/*`), indicadores (`/api/indicadores/*`) e proxy reverso para o AI Gateway (`/api/ai/chat`).
 
 ---
 
-## Onda 3: Homologação Final & Empacotamento
+## Onda 3: Homologação Final, Empacotamento & Hardening
 
-### Trilha 9: Homologação E2E, Paridade & Docker
+### Trilha 9: Homologação E2E, Paridade, Docker & Hardening
 - [ ] **TASK-901**: Criar `Dockerfile.server`, `Dockerfile.worker`, `apps/web/Dockerfile` e `services/ai-gateway/Dockerfile` multi-stage.
 - [ ] **TASK-902**: Executar bateria de testes de paridade (`tests/parity/test_sped_parity.py`) comparando saídas do Django legado vs Rust.
 - [ ] **TASK-903**: Executar benchmarks de tempo e memória RSS com arquivos SPED de 100MB, 500MB e 1GB+.
+- [ ] **TASK-904**: Hardening de Segurança para Produção (Desativar fallback em memória silencioso no Axum, exigir variável `JWT_SECRET` forte sem valor default estático e remover seeds de usuários fixos em compilações `--release`).

@@ -13,15 +13,29 @@ ecd-graph.workspace = true
 ecd-analytics.workspace = true
 
 tokio.workspace = true
+futures.workspace = true
+async-trait.workspace = true
 axum.workspace = true
 tower.workspace = true
 tower-http.workspace = true
+reqwest.workspace = true
 serde.workspace = true
 serde_json.workspace = true
+chrono.workspace = true
+uuid.workspace = true
+rust_decimal.workspace = true
+sqlx.workspace = true
+rusqlite.workspace = true
 redis.workspace = true
 argon2.workspace = true
 jsonwebtoken.workspace = true
 tracing.workspace = true
 tracing-subscriber.workspace = true
 dotenvy.workspace = true
+thiserror.workspace = true
 anyhow.workspace = true
+sha1 = "0.10"
+sha2 = "0.10"
+
+[dev-dependencies]
+http-body-util = "0.1"
