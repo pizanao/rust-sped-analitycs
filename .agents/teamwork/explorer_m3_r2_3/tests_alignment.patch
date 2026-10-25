@@ -1,0 +1,14 @@
+--- /home/pizani/Documents/dados_abertos/rede-cnpj-master-v26/rede_cria_tabelas/tests/adversarial_graph_traversal_test.rs
++++ /home/pizani/Documents/dados_abertos/rede-cnpj-master-v26/rede_cria_tabelas/tests/adversarial_graph_traversal_test.rs
+@@ -415,8 +415,9 @@
+     // In FTS5, empty MATCH query either returns error or empty vec
+     println!("Empty search result: {:?}", r_empty.is_ok());
+ 
+-    // What happens if user provides raw unescaped boolean operators or unclosed quotes?
++    // Resilient search with trailing boolean operator (sanitized into quoted tokens, no syntax error)
+     let r_syntax = search_by_term(&conn, "MODAS OR", 10);
+-    println!("Dangling OR search result: {:?}", r_syntax);
+-    assert!(r_syntax.is_err(), "Raw FTS5 syntax errors (e.g. trailing 'OR') are returned as errors by rusqlite");
++    assert!(r_syntax.is_ok(), "Sanitized search safely handles trailing boolean operators without SQLite syntax error");
++    assert_eq!(r_syntax.unwrap().len(), 0, "Non-matching tokens must return empty result");
+ }

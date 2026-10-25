@@ -1,0 +1,116 @@
+--- a/src/downloader/range_client.rs	2026-10-24 16:30:30.213094365 -0400
++++ b/src/downloader/range_client.rs	2026-10-24 16:31:02.122220933 -0400
+@@ -174,6 +174,19 @@
+                 .await
+             {
+                 Ok(result) => {
++                    // VULN-01: Verify file length matches target.expected_size before atomic rename
++                    let final_size = tokio::fs::metadata(&part_file).await?.len();
++                    if let Some(expected) = target.expected_size {
++                        if expected > 0 && final_size != expected {
++                            anyhow::bail!(
++                                "Size mismatch for {}: got {} bytes on disk, expected {} bytes",
++                                target.filename,
++                                final_size,
++                                expected
++                            );
++                        }
++                    }
++
+                     // Atomic rename from .part to final destination
+                     tokio::fs::rename(&part_file, dest).await?;
+                     pb.finish_with_message(format!("✔ {}", target.filename));
+@@ -252,8 +265,23 @@
+                 let mut writer = BufWriter::with_capacity(self.config.buffer_size_kb * 1024, file);
+                 writer.seek(SeekFrom::Start(start_byte)).await?;
+ 
+-                let transferred = stream_response_body(resp, &mut writer, pb).await?;
+-                writer.flush().await?;
++                let stream_res = stream_response_body(resp, &mut writer, pb).await;
++                let flush_res = writer.flush().await;
++                let transferred = stream_res?;
++                flush_res?;
++
++                let actual_total = start_byte + transferred;
++                let expected_total = parse_content_range_total(resp.headers()).or(target.expected_size);
++                if let Some(expected) = expected_total {
++                    if expected > 0 && actual_total != expected {
++                        anyhow::bail!(
++                            "Incomplete range download for {}: received {} bytes total, expected {}",
++                            target.filename,
++                            actual_total,
++                            expected
++                        );
++                    }
++                }
+ 
+                 Ok(DownloadResult::Resumed {
+                     bytes_appended: transferred,
+@@ -290,8 +318,22 @@
+                     .await?;
+                 let mut writer = BufWriter::with_capacity(self.config.buffer_size_kb * 1024, file);
+ 
+-                let transferred = stream_response_body(resp, &mut writer, pb).await?;
+-                writer.flush().await?;
++                let stream_res = stream_response_body(resp, &mut writer, pb).await;
++                let flush_res = writer.flush().await;
++                let transferred = stream_res?;
++                flush_res?;
++
++                let expected_total = resp.content_length().or(target.expected_size);
++                if let Some(expected) = expected_total {
++                    if expected > 0 && transferred != expected {
++                        anyhow::bail!(
++                            "Incomplete download for {}: received {} bytes, expected {}",
++                            target.filename,
++                            transferred,
++                            expected
++                        );
++                    }
++                }
+ 
+                 Ok(DownloadResult::FreshDownload {
+                     bytes_transferred: transferred,
+@@ -485,7 +527,7 @@
+         // Verify valid zip
+         let zip_file = std::fs::File::open(&dest).expect("open zip");
+         let archive = zip::ZipArchive::new(zip_file).expect("read zip archive");
+-        assert!(archive.len() > 0);
++        assert!(!archive.is_empty());
+ 
+         // 2. Second download attempt should be recognized as already complete (cached)
+         let cached_result = client
+--- a/src/downloader/webdav.rs	2026-10-24 16:30:30.214461418 -0400
++++ b/src/downloader/webdav.rs	2026-10-24 16:31:14.718220440 -0400
+@@ -387,12 +387,13 @@
+     /// Build deterministic static fallback catalog containing all 37 canonical files.
+     pub fn build_static_fallback_catalog(&self, year_month: &str) -> DiscoveryCatalog {
+         let clean_ym = year_month.trim().trim_matches('/');
++        let base_host = extract_base_host(&self.config.base_url);
+         let files = CANONICAL_37_FILES
+             .iter()
+             .map(|&filename| {
+                 let download_url = format!(
+-                    "https://arquivos.receitafederal.gov.br/public.php/dav/files/{}/{}/{}",
+-                    self.config.share_token, clean_ym, filename
++                    "{}/public.php/dav/files/{}/{}/{}",
++                    base_host, self.config.share_token, clean_ym, filename
+                 );
+                 let href = format!("/public.php/webdav/{clean_ym}/{filename}");
+                 RemoteFile {
+@@ -416,12 +417,13 @@
+ 
+     /// Supplement any missing canonical files into a partial live catalog.
+     fn supplement_catalog(&self, mut catalog: DiscoveryCatalog) -> DiscoveryCatalog {
++        let base_host = extract_base_host(&self.config.base_url);
+         let present: HashSet<String> = catalog.files.iter().map(|f| f.name.clone()).collect();
+         for &canon in &CANONICAL_37_FILES {
+             if !present.contains(canon) {
+                 let download_url = format!(
+-                    "https://arquivos.receitafederal.gov.br/public.php/dav/files/{}/{}/{}",
+-                    self.config.share_token, catalog.year_month, canon
++                    "{}/public.php/dav/files/{}/{}/{}",
++                    base_host, self.config.share_token, catalog.year_month, canon
+                 );
+                 let href = format!("/public.php/webdav/{}/{}", catalog.year_month, canon);
+                 catalog.files.push(RemoteFile {

@@ -1,0 +1,167 @@
+--- /home/pizani/Documents/dados_abertos/rede-cnpj-master-v26/rede_cria_tabelas/src/graph/search.rs	2026-10-24 20:56:13.880598626 -0400
++++ /home/pizani/Projects/rust-sped-analitycs/.agents/teamwork/explorer_m3_r2_3/proposed_search.rs	2026-10-24 21:21:16.858539845 -0400
+@@ -56,6 +56,71 @@
+ /// Optimization command to merge FTS5 b-tree segments.
+ pub const FTS5_OPTIMIZE_SQL: &str = "INSERT INTO id_search(id_search) VALUES('optimize');";
+ 
++/// Sanitizes an input search term for safe execution against an SQLite FTS5 MATCH expression.
++///
++/// Prevents SQLite FTS5 syntax errors from:
++/// - Formatted CNPJs (`11.223.344/0001-91` -> `"11223344000191"`, `11.223.344` -> `"11223344"*`)
++/// - Hyphenated trade names (`ALFA-TECH` -> `"ALFA-TECH"`)
++/// - Punctuation / abbreviations (`C&A` -> `"C&A"`, `S.A.` -> `"S.A."`, `D'AVILA` -> `"D'AVILA"`)
++/// - Prefix wildcards (`TECNOL*` -> `"TECNOL"*`)
++/// - Reserved operators (`AND`, `OR`, `NOT`, `NEAR` -> escaped safely inside double quotes)
++/// - Unbalanced quotes, colons (`id:col`), and asterisks
++pub fn sanitize_fts5_term(term: &str) -> String {
++    let trimmed = term.trim();
++    if trimmed.is_empty() {
++        return String::new();
++    }
++
++    // 1. Exact quoted string: if user explicitly provided a fully double-quoted string
++    if trimmed.starts_with('"') && trimmed.ends_with('"') && trimmed.len() > 1 {
++        let inner = trimmed[1..trimmed.len() - 1].replace('"', "\"\"");
++        let inner_trimmed = inner.trim();
++        if !inner_trimmed.is_empty() {
++            return format!("\"{inner_trimmed}\"");
++        }
++        return String::new();
++    }
++
++    // 2. Formatted CNPJ: check if input is formatted CNPJ (digits with ., /, -, spaces)
++    let digits: String = trimmed.chars().filter(|c| c.is_ascii_digit()).collect();
++    let is_cnpj_like = !digits.is_empty()
++        && trimmed
++            .chars()
++            .all(|c| c.is_ascii_digit() || c == '.' || c == '/' || c == '-' || c.is_whitespace());
++
++    if is_cnpj_like && trimmed.contains(['.', '/']) {
++        if digits.len() >= 14 {
++            return format!("\"{}\"", &digits[..14]);
++        } else if digits.len() >= 8 {
++            return format!("\"{}\"*", &digits[..8]);
++        } else {
++            return format!("\"{digits}\"*");
++        }
++    }
++
++    // 3. Tokenize general words separated by whitespace
++    let mut tokens = Vec::new();
++    for word in trimmed.split_whitespace() {
++        // Strip leading asterisks to avoid invalid FTS5 syntax
++        let without_leading_star = word.trim_start_matches('*');
++        let has_wildcard = without_leading_star.ends_with('*');
++        let clean_word = without_leading_star.trim_end_matches('*').replace('"', "\"\"");
++
++        // Ignore tokens that contain no alphanumeric characters (e.g. lone punctuation)
++        if clean_word.is_empty() || !clean_word.chars().any(|c| c.is_alphanumeric()) {
++            continue;
++        }
++
++        if has_wildcard {
++            tokens.push(format!("\"{clean_word}\"*"));
++        } else {
++            tokens.push(format!("\"{clean_word}\""));
++        }
++    }
++
++    tokens.join(" ")
++}
++
+ /// Builds `dados-publicos/rede_search.db` from `cnpj.db` and `rede.db`.
+ pub fn build_search_database(
+     cnpj_db_path: &Path,
+@@ -120,10 +185,15 @@
+ 
+ /// Query helper to search by full-text token matching both id and descricao.
+ pub fn search_by_term(conn: &Connection, term: &str, limit: usize) -> rusqlite::Result<Vec<(String, String)>> {
++    let sanitized = sanitize_fts5_term(term);
++    if sanitized.is_empty() {
++        return Ok(Vec::new());
++    }
++
+     let mut stmt = conn.prepare_cached(
+         "SELECT id, descricao FROM id_search WHERE id_search MATCH ?1 LIMIT ?2;",
+     )?;
+-    let rows = stmt.query_map(params![term, limit as i64], |r| {
++    let rows = stmt.query_map(params![sanitized, limit as i64], |r| {
+         Ok((r.get::<_, String>(0)?, r.get::<_, String>(1)?))
+     })?;
+ 
+@@ -136,7 +206,16 @@
+ 
+ /// Query helper to search by CNPJ radical prefix (e.g. '11223344' -> matches 'PJ_11223344*').
+ pub fn search_by_cnpj_basico(conn: &Connection, cnpj_basico: &str, limit: usize) -> rusqlite::Result<Vec<String>> {
+-    let match_pattern = format!("PJ_{}*", cnpj_basico.trim());
++    let digits: String = cnpj_basico.chars().filter(|c| c.is_ascii_digit()).collect();
++    if digits.is_empty() {
++        return Ok(Vec::new());
++    }
++    let radical = if digits.len() >= 8 {
++        &digits[..8]
++    } else {
++        &digits[..]
++    };
++    let match_pattern = format!("PJ_{radical}*");
+     let mut stmt = conn.prepare_cached(
+         "SELECT DISTINCT id FROM id_search WHERE id MATCH ?1 LIMIT ?2;",
+     )?;
+@@ -180,6 +259,57 @@
+     }
+ 
+     #[test]
++    fn test_fts5_sanitization_formatted_cnpj_and_hyphens() {
++        let conn = Connection::open_in_memory().unwrap();
++        conn.execute_batch(FTS5_SEARCH_TABLE_DDL).unwrap();
++
++        conn.execute_batch(
++            "INSERT INTO id_search VALUES ('PJ_11223344000191', 'ALFA-TECH LTDA');
++             INSERT INTO id_search VALUES ('PJ_11223344000272', 'ALFA FILIAL');
++             INSERT INTO id_search VALUES ('PJ_001', 'C&A MODAS S.A.');
++             INSERT INTO id_search VALUES ('PF_001', 'PF_***123456**-D''AVILA SILVA');",
++        )
++        .unwrap();
++
++        // 1. Formatted CNPJ
++        let r1 = search_by_term(&conn, "11.223.344/0001-91", 10).unwrap();
++        assert_eq!(r1.len(), 1);
++        assert_eq!(r1[0].0, "PJ_11223344000191");
++
++        // 2. Formatted CNPJ radical
++        let r2 = search_by_term(&conn, "11.223.344", 10).unwrap();
++        assert_eq!(r2.len(), 2);
++
++        // 3. search_by_cnpj_basico with formatted input
++        let r3 = search_by_cnpj_basico(&conn, "11.223.344/0001-91", 10).unwrap();
++        assert_eq!(r3.len(), 2);
++
++        // 4. Hyphenated trade name
++        let r4 = search_by_term(&conn, "ALFA-TECH", 10).unwrap();
++        assert_eq!(r4.len(), 1);
++
++        // 5. Special punctuation: &, ., '
++        let r5 = search_by_term(&conn, "C&A", 10).unwrap();
++        assert_eq!(r5.len(), 1);
++
++        let r6 = search_by_term(&conn, "S.A.", 10).unwrap();
++        assert_eq!(r6.len(), 1);
++
++        let r7 = search_by_term(&conn, "D'AVILA", 10).unwrap();
++        assert_eq!(r7.len(), 1);
++
++        // 6. Trailing boolean operator and malformed input
++        let r8 = search_by_term(&conn, "MODAS OR", 10).unwrap();
++        assert_eq!(r8.len(), 0);
++
++        let r9 = search_by_term(&conn, "", 10).unwrap();
++        assert_eq!(r9.len(), 0);
++
++        let r10 = search_by_cnpj_basico(&conn, "", 10).unwrap();
++        assert_eq!(r10.len(), 0);
++    }
++
++    #[test]
+     fn test_build_search_database_end_to_end() {
+         let cnpj_tmp = NamedTempFile::new().unwrap();
+         let rede_tmp = NamedTempFile::new().unwrap();
