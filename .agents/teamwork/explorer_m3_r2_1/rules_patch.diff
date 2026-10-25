@@ -1,0 +1,27 @@
+--- a/src/graph/rules.rs
++++ b/src/graph/rules.rs
+@@ -201,13 +201,19 @@
+ pub fn derive_filial_matriz(conn: &Connection) -> Result<u64> {
+-    // Check if cnpj_base2matriz has rows
++    // Check if cnpj.cnpj_base2matriz table exists and has rows.
++    // Querying table presence in cnpj.sqlite_master first prevents SQLite statement
++    // preparation errors (`no such table: cnpj.cnpj_base2matriz`) when the table does not exist.
+     let has_b2m: bool = conn
+         .query_row(
+-            "SELECT EXISTS(SELECT 1 FROM sqlite_master WHERE type='table' AND name='cnpj_base2matriz') AND EXISTS(SELECT 1 FROM cnpj.cnpj_base2matriz LIMIT 1);",
++            "SELECT EXISTS(SELECT 1 FROM cnpj.sqlite_master WHERE type IN ('table', 'view') AND name='cnpj_base2matriz');",
+             [],
+             |r| r.get(0),
+         )
+-        .unwrap_or(false);
++        .unwrap_or(false)
++        && conn
++            .query_row(
++                "SELECT EXISTS(SELECT 1 FROM cnpj.cnpj_base2matriz LIMIT 1);",
++                [],
++                |r| r.get(0),
++            )
++            .unwrap_or(false);
+ 
+     let sql = if has_b2m {
+         DERIVE_FILIAL_MATRIZ_SQL

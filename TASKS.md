@@ -111,3 +111,14 @@ graph TD
 - [x] **TASK-902**: Executar bateria de testes de paridade (`tests/parity/test_sped_parity.py`) comparando saídas do Django legado vs Rust.
 - [x] **TASK-903**: Executar benchmarks de tempo e memória RSS com arquivos SPED de 100MB, 500MB e 1GB+.
 - [x] **TASK-904**: Hardening de Segurança para Produção (Desativar fallback em memória silencioso no Axum, exigir variável `JWT_SECRET` forte sem valor default estático e remover seeds de usuários fixos em compilações `--release`).
+
+---
+
+## Trilha 10: Reconstrução do Pipeline de Dados Abertos RFB CNPJ (`rede_cria_tabelas` / `rfb-cnpj-etl`) — [Teamwork Multi-Agent] — Concluída [x]
+
+- [x] **TASK-1001**: **Milestone 1 — Scaffold & Downloader Resumível**: Implementação assíncrona HTTP 206 com range requests, crawler WebDAV com detecção automática do diretório mais recente, bypass de cabeçalho `User-Agent`, renomeação atômica `.part` e tolerância a falhas transitórias.
+- [x] **TASK-1002**: **Milestone 2 — Motor de Ingestão `cnpj.db`**: Descompressão streaming zero-disk direta da memória RAM (`zip` para `csv::ReaderBuilder`), geração atômica de 12 tabelas SQLite e 18 índices otimizados, normalização de moedas BRL para `REAL` e expansão de sócios PJ via `cnpj_base2matriz`.
+- [x] **TASK-1003**: **Milestone 3 — Motor de Grafos `rede.db` & Busca FTS5**: Derivação relacional de 7 regras de vínculos societários na tabela `ligacao`, defesas contra valores `NULL`, aceleração por junção rápida com `cnpj_base2matriz` e índice textual virtual `id_search` via SQLite FTS5 (`unicode61 remove_diacritics 2`).
+- [x] **TASK-1004**: **Milestone 4 — Automação GNU Make & Diagnósticos CLI**: Criação de `Makefile` robusto (`.NOTPARALLEL`, `.SHELLFLAGS := -eu -o pipefail -c`) com 17 targets não-interativos (`all`, `download`, `build-cnpj`, `build-rede`, `status`, `build`, `check`, `lint`, `fmt`, `test`, `test-e2e`, etc.).
+- [x] **TASK-1005**: **Milestone 5 — Homologação E2E & Hardening Adversarial**: Suite com 33 testes E2E, 142 testes automatizados aprovados no workspace, consumo de memória RSS rigorosamente delimitado (< 110 MB de pico observado contra teto de 1,8 GB) e aprovação em auditoria independente pós-vitória.
+

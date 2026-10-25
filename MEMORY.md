@@ -97,3 +97,26 @@ Comparando com os utilitários fiscais do Django legado (`apps/fiscal/utils.py` 
    - **Paridade com Django Legado**: **7/7 testes aprovados** (`tests/parity/test_sped_parity.py`) cobrindo `process_cta`, normalização, Hyyrö bit-parallel vs `rapidfuzz`, catálogo de 24 termos, 12 filtros de exclusão, parsing Windows-1252 e apuração.
    - **Microsserviço AI Gateway**: **43/43 testes aprovados** em `pytest` (`services/ai-gateway/tests/`), incluindo schemas Recharts, endpoints SSE e fallback mock isolado de colisões de portas locais.
    - **Frontend Web SPA**: **15/15 testes aprovados** (`apps/web/src/tests/`), cobrindo tipagem contábil, clientes HTTP com cookies HttpOnly, rotas TanStack e contratos JSON de gráficos.
+
+---
+
+## 6. Reconstrução e Unificação do Pipeline de Dados Abertos RFB CNPJ (`rfb-cnpj-etl`)
+
+Em outubro de 2026, as rotas legadas e scripts Python/Bash de criação das bases SQLite de dados abertos da Receita Federal do Brasil (`dados-publicos` / `rede-cnpj-master-v26/rede_cria_tabelas`) foram integralmente reconstruídas em uma ferramenta de linha de comando nativa em Rust (`rfb-cnpj-etl`) com automação via GNU Make:
+
+1. **Localização e Integração**:
+   - Código-fonte e pipeline: `/home/pizani/Documents/dados_abertos/rede-cnpj-master-v26/rede_cria_tabelas`
+   - Bases geradas: `cnpj.db` (dados cadastrais, estabelecimentos, sócios, cnaes) e `rede.db` (grafo relacional de vínculos societários e busca FTS5).
+   - Consumidor downstream: `crates/ecd-graph` em `rust-sped-analytics`.
+
+2. **Decisões Arquiteturais Chave**:
+   - **Download Resumível e Crawler WebDAV**: Detecção dinâmica da pasta mensal mais recente dos dados abertos da RFB, com requisições HTTP 206 `Range` e gravação atômica via arquivos `.part`.
+   - **Ingestão Zero-Disk**: Descompressão de arquivos `.zip` diretamente em streaming na memória para o leitor CSV (`zip::ZipArchive` para `csv::ReaderBuilder`), eliminando a necessidade de gigabytes de espaço temporário em disco para CSVs descompactados.
+   - **Expansão de Sócios PJ (Agosto/2026)**: Inclusão da tabela `cnpj_base2matriz` para resolução precisa de radicais de 8 dígitos de sócios pessoas jurídicas para CNPJ de 14 dígitos.
+   - **Busca Textual Otimizada**: Tabela virtual FTS5 `id_search` configurada com `unicode61 remove_diacritics 2` para buscas insensíveis a acentos e maiúsculas/minúsculas.
+   - **Controle de Recursos Estrito**: Consumo de memória de pico (RSS) mantido abaixo de 110 MB durante testes sintéticos e operacionais (limite de projeto: 1,8 GB de RAM).
+
+3. **Auditoria e Homologação Pós-Vitória**:
+   - 142 testes automatizados aprovados (134 testes no projeto ETL + 8 testes de compatibilidade em `crates/ecd-graph`).
+   - Auditoria independente pós-vitória confirmou ausência de stubs, ausência de facades e total conformidade com o schema SQLite esperado pelo `rust-sped-analytics`.
+
