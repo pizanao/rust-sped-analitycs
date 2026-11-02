@@ -1,0 +1,45 @@
+[package]
+name = "rfb-cnpj-etl"
+version.workspace = true
+edition.workspace = true
+authors.workspace = true
+license.workspace = true
+description = "High-performance native Rust ETL and SQLite database generator for RFB CNPJ open data"
+keywords = ["cnpj", "rfb", "sqlite", "etl", "graph"]
+categories = ["command-line-utilities", "database"]
+
+[lib]
+name = "rfb_cnpj_etl"
+path = "src/lib.rs"
+
+[[bin]]
+name = "rfb-cnpj-etl"
+path = "src/main.rs"
+
+[dependencies]
+anyhow.workspace = true
+chrono.workspace = true
+clap.workspace = true
+crossbeam-channel.workspace = true
+csv.workspace = true
+encoding_rs.workspace = true
+futures-util.workspace = true
+indicatif.workspace = true
+memmap2.workspace = true
+quick-xml.workspace = true
+rayon.workspace = true
+regex.workspace = true
+reqwest.workspace = true
+rusqlite.workspace = true
+serde.workspace = true
+serde_json.workspace = true
+thiserror.workspace = true
+tokio.workspace = true
+tracing.workspace = true
+tracing-subscriber.workspace = true
+zip.workspace = true
+
+[dev-dependencies]
+assert_cmd.workspace = true
+predicates.workspace = true
+tempfile.workspace = true

@@ -7,6 +7,7 @@ members = [
     "crates/ecd-graph",
     "crates/ecd-analytics",
     "crates/ecd-storage",
+    "crates/rfb-cnpj-etl",
     "apps/server",
     "apps/worker",
 ]
@@ -25,17 +26,19 @@ ecd-fiscal = { path = "crates/ecd-fiscal" }
 ecd-graph = { path = "crates/ecd-graph" }
 ecd-analytics = { path = "crates/ecd-analytics" }
 ecd-storage = { path = "crates/ecd-storage" }
+rfb-cnpj-etl = { path = "crates/rfb-cnpj-etl" }
 
 # Async & Runtime
 tokio = { version = "1.40", features = ["full"] }
 futures = "0.3"
+futures-util = "0.3"
 async-trait = "0.1"
 
 # Web & Networking
 axum = { version = "0.7", features = ["multipart", "macros"] }
 tower = { version = "0.5", features = ["util", "timeout"] }
 tower-http = { version = "0.6", features = ["cors", "compression-full", "trace", "fs"] }
-reqwest = { version = "0.12", default-features = false, features = ["json", "rustls-tls", "stream"] }
+reqwest = { version = "0.12", default-features = false, features = ["json", "rustls-tls", "stream", "cookies"] }
 
 # Serialization & Data
 serde = { version = "1.0", features = ["derive"] }
@@ -46,27 +49,38 @@ rust_decimal = { version = "1.36", features = ["serde-float"] }
 
 # Storage & Databases
 sqlx = { version = "0.8", default-features = false, features = ["runtime-tokio", "tls-rustls", "postgres", "chrono", "uuid", "rust_decimal", "json", "migrate"] }
-rusqlite = { version = "0.32", features = ["bundled", "blob"] }
+rusqlite = { version = "0.32", features = ["bundled", "backup", "blob"] }
 r2d2 = "0.8"
 r2d2_sqlite = "0.25"
 redis = { version = "0.27", features = ["tokio-comp", "connection-manager", "aio"] }
 
-# Performance, I/O & Text
+# Performance, I/O, ETL & Text
 memmap2 = "0.9"
 encoding_rs = "0.8"
 strsim = "0.11"
 petgraph = { version = "0.6", features = ["serde-1"] }
 moka = { version = "0.12", features = ["future"] }
 umya-spreadsheet = "2.1"
+clap = { version = "4.5", features = ["derive", "env"] }
+indicatif = { version = "0.17", features = ["rayon"] }
+zip = { version = "2.2", default-features = false, features = ["deflate"] }
+csv = "1.3"
+crossbeam-channel = "0.5"
+rayon = "1.10"
+regex = "1.11"
+quick-xml = { version = "0.37", features = ["serialize"] }
 
 # Security & Auth
 argon2 = "0.5"
 jsonwebtoken = "9.3"
 
-# Observability & Config
+# Observability, Config & Testing
 tracing = "0.1"
-tracing-subscriber = { version = "0.3", features = ["env-filter", "json"] }
+tracing-subscriber = { version = "0.3", features = ["env-filter", "json", "fmt"] }
 config = "0.14"
 dotenvy = "0.15"
 thiserror = "1.0"
 anyhow = "1.0"
+tempfile = "3.12"
+assert_cmd = "2.0"
+predicates = "3.1"
