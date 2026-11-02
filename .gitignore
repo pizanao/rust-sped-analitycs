@@ -32,6 +32,9 @@ data/
 # IDE & Editor
 .idea/
 .vscode/
-/server.Dockerfile
 .temp_demo/
 output/
+/scripts/escriturador-sped/
+/.directory
+.playwright-mcp/
+.coverage

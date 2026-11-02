@@ -1,0 +1,273 @@
+title: Rust Sped Analytics - Pipeline RFB CNPJ (7.53x Python)
+description: 'Demonstração completa do pipeline ETL nativo em Rust: download HTTP
+  206 resumível, streaming zero-copy, grafos societários BFS 1-10 camadas e auditoria
+  fiscal DRE'
+config:
+  viewport:
+    width: 1670
+    height: 1080
+  fps: 25
+  voice_id: bf91cd6a
+  model: omnivoice
+  base_url: http://localhost:3900
+  output_dir: output
+  temp_dir: .temp_demo
+scenes:
+- id: scene_01_abertura
+  title: Abertura - Pipeline RFB CNPJ
+  narration: Olá pessoal! Sejam bem-vindos à demonstração do Rust Sped Analytics.
+    Aqui estamos vendo o pipeline RFB CNPJ processando setenta, e quatro virgula cinco
+    gigabytes da Receita Federal em apenas seis minutos e dezessete segundos. Isso
+    representa um speedup de sete vírgula cinco vezes em relação ao Python legado,
+    com setenta e sete por cento menos memória.
+  pause_after: 1.0
+  actions:
+  - action: navigate
+    url: http://localhost:3000/rfb-cnpj
+    highlight: false
+  audio_path: .temp_demo/audio/scene_01_abertura_f5b41282b29734ed.wav
+  audio_duration: 30.97
+- id: scene_02_metricas
+  title: Métricas de Performance
+  narration: Olha só esses números. Sete virgula cinco três vezes mais rápido. Quatro
+    virgula dois gigabytes de RAM contra dezoito virgula sete do Python. Cinquenta
+    e quatro milhões e oitocentos mil registros processados. E o throughput médio
+    de cento e noventa e sete megabytes por segundo, com pico de oitocentos e noventa
+    megabytes por segundo no parse CSV.
+  pause_after: 1.0
+  actions:
+  - action: scroll
+    highlight: false
+    y: 600
+  - action: wait
+    seconds: 1.0
+    highlight: false
+  audio_path: .temp_demo/audio/scene_02_metricas_a872c20afc310e6e.wav
+  audio_duration: 30.11
+- id: scene_03_pipeline_timeline
+  title: Timeline do Pipeline Zero-Copy
+  narration: Vejam a timeline do pipeline. Cinco estágios executando em sequência.
+    Primeiro, download HTTP dois zero seis resumível - quarenta e cinco segundos.
+    Segundo, descompressão streaming zero-copy - doze segundos. Terceiro, parse CSV
+    multithread com Rayon - três minutos. Quarto, construção do grafo societário -
+    noventa e cinco segundos. Quinto, indexação FTS cinco full-text search - quarenta
+    e cinco segundos. Tudo sem escrever CSVs intermediários em disco.
+  pause_after: 1.0
+  actions:
+  - action: scroll
+    highlight: false
+    y: 600
+  audio_path: .temp_demo/audio/scene_03_pipeline_timeline_4bfa8235c8b97a19.wav
+  audio_duration: 39.46
+- id: scene_04_graficos
+  title: Gráficos Comparativos Rust vs Python
+  narration: 'Aqui temos os gráficos comparativos. A área azul é o Rust, a amarela
+    é o Python legado. Reparem como o Rust mantém throughput estável e alto durante
+    todo o processamento. No gráfico de barras, cada estágio mostra a diferença brutal.
+    Parse CSV: oitocentos e noventa contra cento e vinte megabytes por segundo. Isso
+    é processamento paralelo real com zero-copy memory mapping.'
+  pause_after: 1.0
+  actions:
+  - action: scroll
+    highlight: false
+    y: 600
+  audio_path: .temp_demo/audio/scene_04_graficos_e18519b6603315d5.wav
+  audio_duration: 32.44
+- id: scene_05_grafo_societario
+  title: Grafo Societário BFS e Sanções GRC
+  narration: Agora o grafo societário. Nós azuis são empresas, verdes são sócios,
+    vermelhos são sanções. Posso dar zoom, filtrar por tipo e clicar nos nós para
+    ver detalhes. O algoritmo BFS navega de uma a dez camadas com prevenção de ciclos.
+    E tem cruzamento automático com PEP, CEIS, CEPIM, CNEP e Dívida Ativa PGFN.
+  pause_after: 1.0
+  actions:
+  - action: click
+    selector: button:has-text('Todos')
+  - action: wait
+    seconds: 0.5
+    highlight: false
+  audio_path: .temp_demo/audio/scene_05_grafo_societario_d3f0cf461e66d1c3.wav
+  audio_duration: 26.08
+- id: scene_06_fts5_search
+  title: Busca FTS5 com Unicode61 Remove Diacritics
+  narration: A busca FTS5 é poderosa. Usa tokenizer Unicode61 remove diacritics. Isso
+    significa que busco por "Petrobras" ou "PETROBRAS" ou até com acentos e encontro
+    tudo. Vou testar uma busca aqui.
+  pause_after: 0.8
+  actions:
+  - action: type
+    selector: input[placeholder*='busca' i], input[placeholder*='search' i], input[placeholder*='pesquisar' i]
+    text: Petrobras
+  - action: press
+    key: Enter
+    highlight: false
+  audio_path: .temp_demo/audio/scene_06_fts5_search_543d4fff068f3065.wav
+  audio_duration: 16.88
+- id: scene_07_makefile
+  title: Makefile Autônomo - 17 Targets
+  narration: O Makefile é totalmente autônomo. Dezessete targets, zero prompts interativos.
+    Posso rodar make all, make download, make build-cnpj, make build-rede. Tem serialização
+    garantida com NOTPARALLEL e shell strict mode. Vou mostrar o help e um dry-run.
+  pause_after: 1.0
+  actions:
+  - action: scroll
+    highlight: false
+    y: 1200
+  audio_path: .temp_demo/audio/scene_07_makefile_7302636fa0b3e013.wav
+  audio_duration: 20.94
+- id: scene_08_ingestao
+  title: Ingestão SPED - Upload Multipart e Worker Redis
+  narration: Vamos para a aba de Ingestão. Aqui faço upload de arquivos SPED ECD via
+    drag and drop. O upload é multipart streaming direto pro worker assíncrono que
+    consome a fila Redis. Os logs chegam em tempo real via Server-Sent Events. Vou
+    simular um upload.
+  pause_after: 1.0
+  actions:
+  - action: navigate
+    url: http://localhost:3000/ingestao
+    highlight: false
+  - action: wait
+    seconds: 1.0
+    highlight: false
+  audio_path: .temp_demo/audio/scene_08_ingestao_db720330c5fd0a87.wav
+  audio_duration: 20.85
+- id: scene_09_upload
+  title: Upload de Arquivo SPED
+  narration: Aqui está a dropzone. Arrasto o arquivo SPED da Petrobras. O progresso
+    mostra o streaming em tempo real. O job entra na fila como Aguardando, depois
+    Em Processamento, e quando termina vira Sucesso com as linhas processadas.
+  pause_after: 1.0
+  actions:
+  - action: click
+    selector: button:has-text("Selecionar Arquivo SPED")
+  - action: wait
+    seconds: 2.0
+    highlight: false
+  audio_path: .temp_demo/audio/scene_09_upload_923d499c65451821.wav
+  audio_duration: 19.18
+- id: scene_10_sse_logs
+  title: Logs em Tempo Real via SSE
+  narration: Abrindo os logs ao vivo. Server-Sent Events trazem o progresso em tempo
+    real. Vejam as linhas sendo processadas, o tempo decorrido, o throughput. É o
+    worker consumindo a fila Redis e reportando via broadcast channel.
+  pause_after: 1.0
+  actions:
+  - action: click
+    selector: button:has-text('Logs'), button:has-text('live'), button:has-text('Log')
+  - action: wait
+    seconds: 3.0
+    highlight: false
+  audio_path: .temp_demo/audio/scene_10_sse_logs_3dbf40a8b2ed2839.wav
+  audio_duration: 17.9
+- id: scene_11_fiscal_dre
+  title: Auditoria Fiscal - DRE e Blocos SPED
+  narration: Agora a Auditoria Fiscal. Digito o CNPJ da Petrobras. A DRE mostra Receita
+    Bruta de quarenta e oito milhões, Receita de Serviços de trinta e cinco milhões,
+    e Outras Receitas de treze milhões. A classificação automática usa fuzzy matching
+    contra o catálogo fiscal.
+  pause_after: 1.0
+  actions:
+  - action: navigate
+    url: http://localhost:3000/fiscal
+    highlight: false
+  - action: wait
+    seconds: 1.0
+    highlight: false
+  - action: type
+    selector: input[placeholder*='CNPJ' i], input[placeholder*='cnpj' i]
+    text: '33000167000101'
+  - action: press
+    key: Enter
+    highlight: false
+  audio_path: .temp_demo/audio/scene_11_fiscal_dre_eb1370aca7e8abf4.wav
+  audio_duration: 21.8
+- id: scene_12_sped_blocks
+  title: Blocos SPED Oficiais - 0000, J100, J150, I155
+  narration: Os blocos SPED estão todos aqui. Bloco zero zero zero zero com cabeçalho.
+    Bloco J100 com o balancete completo. Bloco J150 com a DRE apurada. Bloco I155
+    com os lançamentos contábeis. E posso exportar tudo para XLSX nativo com umya-spreadsheet.
+  pause_after: 1.0
+  actions:
+  - action: click
+    selector: button:has-text('J100'), [role='tab']:has-text('J100')
+  - action: wait
+    seconds: 0.5
+    highlight: false
+  - action: click
+    selector: button:has-text('J150'), [role='tab']:has-text('J150')
+  - action: wait
+    seconds: 0.5
+    highlight: false
+  - action: click
+    selector: button:has-text('I155'), [role='tab']:has-text('I155')
+  - action: wait
+    seconds: 0.5
+    highlight: false
+  audio_path: .temp_demo/audio/scene_12_sped_blocks_724f3cb5c15cdab9.wav
+  audio_duration: 23.28
+- id: scene_13_grc_navegacao
+  title: Rede Societária - BFS, Dijkstra e Sanções
+  narration: Na aba Rede Societária, o canvas interativo mostra o grafo completo.
+    Posso expandir nós, buscar menor caminho com Dijkstra, e ver as sanções cruzadas
+    automaticamente. O banco links.db traz PEP, CEIS, CEPIM, CNEP e PGFN.
+  pause_after: 1.0
+  actions:
+  - action: navigate
+    url: http://localhost:3000/grc
+    highlight: false
+  - action: wait
+    seconds: 2.0
+    highlight: false
+  audio_path: .temp_demo/audio/scene_13_grc_navegacao_cdb416206cb33e1a.wav
+  audio_duration: 18.96
+- id: scene_14_indicadores
+  title: Indicadores Econômicos Setoriais
+  narration: Os indicadores mostram distribuição por CNAE, porte empresarial, regimes
+    tributários e métricas de capital social. Tudo cacheado com Moka para performance.
+  pause_after: 1.0
+  actions:
+  - action: navigate
+    url: http://localhost:3000/indicadores
+    highlight: false
+  - action: wait
+    seconds: 1.5
+    highlight: false
+  audio_path: .temp_demo/audio/scene_14_indicadores_752aabefb91e3501.wav
+  audio_duration: 13.94
+- id: scene_15_ai_copilot
+  title: AI Copilot - Consulta em Linguagem Natural
+  narration: Por fim, o AI Copilot. Abro o drawer e pergunto em linguagem natural.
+    "Qual a receita de serviços da Petrobras em 2023?" O, agente ReAct via LangGraph
+    consulta o backend, gera a resposta e especifica um gráfico Recharts para renderizar.
+  pause_after: 1.0
+  actions:
+  - action: click
+    selector: button:has(svg.lucide-bot), button[aria-label*='copilot' i], button[aria-label*='assistant'
+      i]
+  - action: wait
+    seconds: 1.0
+    highlight: false
+  - action: type
+    selector: textarea, input[placeholder*='pergunta' i], input[placeholder*='ask'
+      i]
+    text: Qual a receita de serviços da Petrobras em 2023?
+  - action: press
+    key: Enter
+    highlight: false
+  - action: wait
+    seconds: 3.0
+    highlight: false
+  audio_path: .temp_demo/audio/scene_15_ai_copilot_2f8ab68dd24c06f1.wav
+  audio_duration: 21.61
+- id: scene_16_encerramento
+  title: Encerramento
+  narration: Rust Sped Analytics - pipeline RFB CNPJ nativo em Rust, auditoria fiscal
+    SPED, grafos societários e inteligência setorial. Tudo com performance de produção,
+    testado e validado. Obrigado por assistir!
+  pause_after: 1.5
+  actions:
+  - action: navigate
+    url: http://localhost:3000/rfb-cnpj
+    highlight: false
+  audio_path: .temp_demo/audio/scene_16_encerramento_49037277238874c1.wav
+  audio_duration: 17.56
