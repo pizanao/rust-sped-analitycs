@@ -44,7 +44,7 @@ Cada agente possui autoridade exclusiva sobre um conjunto de diretórios:
 | Trilha / Agente | Escopo do Módulo | Diretórios Exclusivos de Escrita |
 | :--- | :--- | :--- |
 | **Trilha 1** | Motor Parser SPED | `crates/ecd-parser/**` |
-| **Trilha 2** | Motor de Grafos e Rede CNPJ | `crates/ecd-graph/**` |
+| **Trilha 2** | Motor de Grafos e Rede CNPJ | `crates/ecd-graph/**` e `crates/rfb-cnpj-etl/**` |
 | **Trilha 3** | Motor Fiscal & Planilhas XLSX | `crates/ecd-fiscal/**` |
 | **Trilha 4** | Indicadores Econômicos & Cache | `crates/ecd-analytics/**` |
 | **Trilha 5** | Frontend SPA React | `apps/web/**` |
@@ -153,13 +153,9 @@ Todas as 10 trilhas estão concluídas e homologadas. Qualquer novo trabalho dev
 
 ---
 
-## 6. Pipeline de Dados Abertos RFB CNPJ (`rfb-cnpj-etl`)
+## 6. Pipeline de Dados Abertos RFB CNPJ (`crates/rfb-cnpj-etl`)
 
-A base SQLite consumida por `crates/ecd-graph` (`cnpj.db`, `rede.db`, `links.db`) é gerada por uma ferramenta autônoma em Rust localizada **fora** deste workspace:
-
-```
-/home/pizani/Documents/dados_abertos/rede-cnpj-master-v26/rede_cria_tabelas/
-```
+A base SQLite consumida por `crates/ecd-graph` (`cnpj.db`, `rede.db`, `rede_search.db`) é gerada pela crate nativa integrada a este workspace em [`crates/rfb-cnpj-etl/`](crates/rfb-cnpj-etl), que expõe tanto biblioteca (`rfb_cnpj_etl`) quanto binário CLI (`rfb-cnpj-etl`) e alvos no `Makefile` raiz (`make cnpj-download`, `make cnpj-build`, `make cnpj-rede`, `make cnpj-status`, `make cnpj-all`).
 
 Características principais:
 - Download resumível HTTP 206 com crawler WebDAV (detecção automática do diretório mensal RFB).
@@ -168,4 +164,4 @@ Características principais:
 - Geração de `rede.db`: 7 regras de vínculos societários + FTS5 `unicode61 remove_diacritics 2`.
 - Consumo de pico: **< 110 MB RSS** (limite de projeto: 1,8 GB).
 
-**Regra para agentes**: não modifique os arquivos `.db` diretamente; consuma-os exclusivamente via a API de `crates/ecd-graph`. Qualquer atualização das bases requer rodar o ETL externo de forma isolada.
+**Regra para agentes**: não modifique os arquivos `.db` manualmente; gere-os via `crates/rfb-cnpj-etl` e consuma-os nas consultas analíticas via `crates/ecd-graph`.

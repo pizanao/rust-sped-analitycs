@@ -38,3 +38,11 @@ output/
 /.directory
 .playwright-mcp/
 .coverage
+
+# RFB CNPJ ETL Data & Temporaries
+dados-publicos/
+dados-publicos-zip/
+*.db-shm
+*.part
+*.tmp*
+.superpowers/

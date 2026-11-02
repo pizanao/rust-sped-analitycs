@@ -32,15 +32,17 @@ mkdir -p "${STAGE_DIR}/media/ecd_stage/erro"
 # 3. Compilar binários Rust caso não existam
 SERVER_BIN="${ROOT_DIR}/target/release/ecd-server"
 WORKER_BIN="${ROOT_DIR}/target/release/ecd-worker"
+ETL_BIN="${ROOT_DIR}/target/release/rfb-cnpj-etl"
 
-if [[ ! -f "${SERVER_BIN}" || ! -f "${WORKER_BIN}" || "${FORCE_BUILD:-0}" == "1" ]]; then
-    echo "🔨 Compilando binários Rust em release (ecd-server, ecd-worker)..."
-    cargo build --release -p ecd-server -p ecd-worker
+if [[ ! -f "${SERVER_BIN}" || ! -f "${WORKER_BIN}" || ! -f "${ETL_BIN}" || "${FORCE_BUILD:-0}" == "1" ]]; then
+    echo "🔨 Compilando binários Rust em release (ecd-server, ecd-worker, rfb-cnpj-etl)..."
+    cargo build --release -p ecd-server -p ecd-worker -p rfb-cnpj-etl
 fi
 
 echo "📋 Copiando binários..."
 cp -f "${SERVER_BIN}" "${STAGE_DIR}/bin/"
 cp -f "${WORKER_BIN}" "${STAGE_DIR}/bin/"
+cp -f "${ETL_BIN}" "${STAGE_DIR}/bin/"
 chmod +x "${STAGE_DIR}/bin/"*
 
 # 4. Empacotar Frontend Web se disponível
