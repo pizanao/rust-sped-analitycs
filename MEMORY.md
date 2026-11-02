@@ -1,6 +1,6 @@
 # MEMORY.md — Registro de Decisões Arquiteturais e Ajustes de Revisão (`rust_sped_analytics`)
 
-> **Última atualização**: 2026-10-24
+> **Última atualização**: 2026-10-27
 > **Propósito**: Memória persistente do projeto para orientar todos os agentes de desenvolvimento sobre regras invioláveis de negócio, correções de paridade com o legado Django (`ecd_analytics`) e isolamento entre trilhas paralelas.
 
 ---

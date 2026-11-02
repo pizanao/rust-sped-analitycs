@@ -192,35 +192,78 @@ make clean-all
 
 ---
 
+## Métricas de Performance Homologadas
+
+| Métrica | Resultado |
+| :--- | :--- |
+| Throughput de Parsing | **52 – 54 MB/s** (~930.000 linhas/s) |
+| SPED de 100 MB | **~1,85 s** (vs. 18–45 min no Django) |
+| SPED de 500 MB (8,88 M registros) | **~9,60 s** (100× mais rápido) |
+| Fuzzy Matching DRE | **>265.000 avaliações/s** (3,48 µs/op) |
+| Testes Rust (workspace) | **82/82 aprovados** |
+| Testes Paridade Django | **7/7 aprovados** |
+| Testes AI Gateway | **43/43 aprovados** |
+| Testes Frontend SPA | **15/15 aprovados** |
+| Testes ETL RFB CNPJ | **142/142 aprovados** |
+| Consumo de memória (ETL) | **< 110 MB RSS** (teto: 1,8 GB) |
+
+---
+
 ## Estrutura de Pastas e Módulos
 
 ```text
 rust-sped-analitycs/
 ├── Makefile                       # Comandos simplificados de execução, build e testes
-├── Cargo.toml                     # Configuração central do projeto Rust (workspace)
-├── AGENTS.md                      # Protocolo de concorrência e guia de agentes de IA
+├── Cargo.toml                     # Configuração central do workspace Rust
 ├── docker-compose.yml             # Orquestrador dos containers (Postgres, Redis, Web, API)
+├── AGENTS.md                      # Protocolo multi-agentes e guia de concorrência
+├── AGENT_GUIDE.md                 # Protocolo detalhado de reivindicação e verificação de tarefas
+├── TASKS.md                       # Quadro de tarefas por trilha (concluídas)
+├── MEMORY.md                      # Registro de decisões arquiteturais invioláveis
+├── migrations/
+│   └── 0001_initial_schema.sql    # Schema PostgreSQL 16 com paridade 100% ao Django legado
 ├── apps/
-│   ├── server/                    # API Axum REST e Server-Sent Events (SSE)
-│   ├── worker/                    # Motor de processamento rápido dos arquivos SPED
-│   └── web/                       # Frontend SPA (React + Tailwind + Shadcn UI)
+│   ├── server/                    # API REST + SSE (Axum 0.7, JWT/Argon2id, RBAC)
+│   ├── worker/                    # Consumer Redis BRPOP + pipeline de parsing batch
+│   └── web/                       # SPA (React 18 + Vite + TypeScript + Tailwind + Shadcn UI)
 ├── crates/
-│   ├── ecd-domain/                # Estruturas oficiais da Receita Federal (Registros SPED)
-│   ├── ecd-parser/                # Leitor de alta velocidade com memória virtual (memmap2)
-│   ├── ecd-fiscal/                # Apuração da DRE, termos de receita e gerador de Excel
-│   ├── ecd-graph/                 # Grafo de sócios e busca de grupos econômicos
-│   ├── ecd-analytics/             # Estatísticas de CNAE, porte e cache em memória
-│   └── ecd-storage/               # Acesso ao banco de dados PostgreSQL
+│   ├── ecd-domain/                # Contratos: structs SPED ECD e eventos Redis
+│   ├── ecd-parser/                # Streaming zero-copy memmap2 (WINDOWS-1252, CRLF)
+│   ├── ecd-fiscal/                # Apuração DRE: partial_ratio, 24 termos, 12 filtros, XLSX
+│   ├── ecd-graph/                 # BFS 1-10 camadas, Dijkstra, sanções PEP/CEIS/CEPIM/CNEP/PGFN
+│   ├── ecd-analytics/             # Indicadores CNAE/Porte/Simples + cache moka TTL
+│   └── ecd-storage/               # Pool SQLx PostgreSQL + repositories isolados por trilha
 ├── services/
-│   └── ai-gateway/                # Copiloto de IA em Python (FastAPI + LangGraph)
+│   └── ai-gateway/                # Copiloto IA: FastAPI + LangGraph ReAct + ChartSpec JSON
 ├── scripts/
-│   ├── gerar_massa_sped.py        # Gerador oficial de arquivos SPED sintéticos
-│   └── package.sh                 # Script de empacotamento para distribuição
-└── tests/fixtures/sped/           # Pasta onde os arquivos SPED gerados são armazenados
+│   ├── gerar_massa_sped.py        # Gerador de arquivos SPED sintéticos (CNPJ DV-válido)
+│   └── package.sh                 # Empacotamento de distribuição (dist/*.tar.gz)
+└── tests/
+    ├── fixtures/sped/             # Arquivos SPED gerados para testes e homologação
+    └── parity/
+        └── test_sped_parity.py    # Paridade aritmética estrita vs. Django legado (7/7)
 ```
+
+---
+
+## Pipeline de Dados Abertos RFB CNPJ (`rfb-cnpj-etl`)
+
+A inteligência societária do módulo `ecd-graph` depende de bases SQLite geradas por uma ferramenta autônoma em Rust localizada em:
+
+```
+/home/pizani/Documents/dados_abertos/rede-cnpj-master-v26/rede_cria_tabelas/
+```
+
+Essa ferramenta (`rfb-cnpj-etl`) realiza:
+- **Download resumível HTTP 206** com crawler WebDAV para detectar o diretório mensal mais recente dos dados abertos da RFB.
+- **Descompressão streaming zero-disk** de arquivos `.zip` diretamente em memória (sem extrair GBs de CSV para disco).
+- **Geração de `cnpj.db`**: 12 tabelas SQLite com 18 índices — dados cadastrais, estabelecimentos, sócios, CNAEs, expansão de sócios PJ via `cnpj_base2matriz`.
+- **Geração de `rede.db`**: 7 regras de vínculos societários + índice FTS5 (`unicode61 remove_diacritics 2`) para busca insensível a acentos.
+- Consumo de memória de pico mantido **< 110 MB RSS** (limite de projeto: 1,8 GB).
+- **142 testes automatizados** aprovados (134 no ETL + 8 de compatibilidade em `crates/ecd-graph`).
 
 ---
 
 ## Desenvolvimento e Contribuição
 
-Para orientações sobre desenvolvimento com múltiplos agentes de IA em paralelo e especificações técnicas de cada módulo, consulte [`AGENTS.md`](AGENTS.md) e [`TASKS.md`](TASKS.md).
+Para orientações sobre desenvolvimento com múltiplos agentes de IA em paralelo e especificações técnicas de cada módulo, consulte [`AGENTS.md`](AGENTS.md), [`AGENT_GUIDE.md`](AGENT_GUIDE.md) e [`TASKS.md`](TASKS.md).

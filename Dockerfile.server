@@ -2,11 +2,11 @@
 # Rust Sped Analytics - HTTP Server Dockerfile (Multi-stage Build)
 # ==============================================================================
 
-FROM rust:1.85-slim-bookworm AS builder
+FROM rust:1.99-bookworm AS builder
 
 WORKDIR /usr/src/app
 
-RUN apt-get -o Acquire::Check-Valid-Until=false update && apt-get install -y --no-install-recommends \
+RUN apt-get -o Acquire::Check-Valid-Until=false -o Acquire::Check-Date=false update && apt-get install -y --no-install-recommends \
     pkg-config \
     build-essential \
     libssl-dev \
@@ -19,11 +19,11 @@ COPY apps/worker ./apps/worker
 
 RUN cargo build --release -p ecd-server
 
-FROM debian:bookworm-slim AS runtime
+FROM rust:1.99-bookworm AS runtime
 
 WORKDIR /app
 
-RUN apt-get -o Acquire::Check-Valid-Until=false update && apt-get install -y --no-install-recommends \
+RUN apt-get -o Acquire::Check-Valid-Until=false -o Acquire::Check-Date=false update && apt-get install -y --no-install-recommends \
     ca-certificates \
     curl \
     && rm -rf /var/lib/apt/lists/*

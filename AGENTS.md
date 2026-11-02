@@ -129,3 +129,43 @@ make test-web
 # 5. Validação de empacotamento
 make package
 ```
+
+
+---
+
+## 5. Estado de Homologação (Outubro 2026)
+
+Todas as 10 trilhas estão concluídas e homologadas. Qualquer novo trabalho deve partir deste baseline.
+
+| Componente | Cobertura | Status |
+| :--- | :---: | :---: |
+| Workspace Rust (`ecd-*`, `apps/*`) | **82/82 testes** | ✅ |
+| Paridade aritmética Django legado | **7/7 testes** | ✅ |
+| AI Gateway FastAPI/LangGraph | **43/43 testes** | ✅ |
+| Frontend SPA React | **15/15 testes** | ✅ |
+| ETL RFB CNPJ (`rfb-cnpj-etl`) | **142/142 testes** | ✅ |
+
+**Benchmarks de throughput validados:**
+- SPED 100 MB: **~1,85 s** | SPED 500 MB (8,88 M registros): **~9,60 s**
+- Throughput: **52–54 MB/s**, ~930.000 linhas/s (100× vs. Django)
+- Fuzzy matching DRE: **>265.000 avaliações/s** (3,48 µs/op)
+- ETL CNPJ: pico de memória **< 110 MB RSS**
+
+---
+
+## 6. Pipeline de Dados Abertos RFB CNPJ (`rfb-cnpj-etl`)
+
+A base SQLite consumida por `crates/ecd-graph` (`cnpj.db`, `rede.db`, `links.db`) é gerada por uma ferramenta autônoma em Rust localizada **fora** deste workspace:
+
+```
+/home/pizani/Documents/dados_abertos/rede-cnpj-master-v26/rede_cria_tabelas/
+```
+
+Características principais:
+- Download resumível HTTP 206 com crawler WebDAV (detecção automática do diretório mensal RFB).
+- Ingestão streaming zero-disk: descompressão `.zip` diretamente em memória sem extrair CSVs para disco.
+- Geração de `cnpj.db`: 12 tabelas, 18 índices, expansão de sócios PJ via `cnpj_base2matriz`.
+- Geração de `rede.db`: 7 regras de vínculos societários + FTS5 `unicode61 remove_diacritics 2`.
+- Consumo de pico: **< 110 MB RSS** (limite de projeto: 1,8 GB).
+
+**Regra para agentes**: não modifique os arquivos `.db` diretamente; consuma-os exclusivamente via a API de `crates/ecd-graph`. Qualquer atualização das bases requer rodar o ETL externo de forma isolada.

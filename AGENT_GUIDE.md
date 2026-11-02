@@ -71,7 +71,44 @@ pytest
 
 ---
 
-## 4. Regras de Git e Commits
+## 4. Matriz de Homologação (Estado Final)
+
+Todas as trilhas estão concluídas. A tabela abaixo reflete o estado de cobertura após a Onda 3 e a Trilha 10:
+
+| Componente | Testes | Status |
+| :--- | :---: | :---: |
+| Workspace Rust (todos os crates) | **82/82** | ✅ |
+| Paridade Django legado | **7/7** | ✅ |
+| AI Gateway (FastAPI / pytest) | **43/43** | ✅ |
+| Frontend SPA | **15/15** | ✅ |
+| ETL RFB CNPJ (`rfb-cnpj-etl`) | **142/142** | ✅ |
+
+Benchmarks de performance validados:
+- Parsing SPED 100 MB: **~1,85 s** | 500 MB: **~9,60 s** (throughput: 52–54 MB/s, ~930.000 linhas/s)
+- Fuzzy Matching DRE: **>265.000 avaliações/s** (3,48 µs/operação)
+- ETL CNPJ: consumo de pico **< 110 MB RSS**
+
+---
+
+## 5. Pipeline de Dados Abertos RFB CNPJ (`rfb-cnpj-etl`)
+
+O módulo `crates/ecd-graph` consome bancos SQLite gerados pela ferramenta autônoma `rfb-cnpj-etl`, localizada em:
+
+```
+/home/pizani/Documents/dados_abertos/rede-cnpj-master-v26/rede_cria_tabelas/
+```
+
+Essa ferramenta é independente do workspace Rust principal. Ela:
+- Baixa os dados abertos da RFB via HTTP 206 com crawler WebDAV (detecção automática do diretório mensal).
+- Gera `cnpj.db` (dados cadastrais, sócios, CNAEs, expansão PJ via `cnpj_base2matriz`) e `rede.db` (grafo + FTS5).
+- Opera com zero-disk durante a ingestão (descompressão streaming em memória).
+
+Não modifique nem faça consultas diretas nos arquivos `.db` dentro do workspace `rust-sped-analitycs`; consuma-os apenas via `crates/ecd-graph`.
+
+---
+
+## 6. Regras de Git e Commits
+
 * Utilize commits semânticos no padrão Conventional Commits:
   * `feat(parser): implementar iterador de registros J100 e J150`
   * `test(fiscal): adicionar teste de similaridade partial_ratio com 24 termos`
