@@ -17,6 +17,11 @@ const indexRoute = createRoute({
   path: '/',
 });
 
+const rfbCnpjRoute = createRoute({
+  getParentRoute: () => rootRoute,
+  path: '/rfb-cnpj',
+});
+
 const ingestaoRoute = createRoute({
   getParentRoute: () => rootRoute,
   path: '/ingestao',
@@ -39,6 +44,7 @@ const indicadoresRoute = createRoute({
 
 const routeTree = rootRoute.addChildren([
   indexRoute,
+  rfbCnpjRoute,
   ingestaoRoute,
   fiscalRoute,
   grcRoute,
