@@ -18,7 +18,7 @@ CNPJ_DB        ?= $(CNPJ_DATA_DIR)/cnpj.db
 REDE_DB        ?= $(CNPJ_DATA_DIR)/rede.db
 SEARCH_DB      ?= $(CNPJ_DATA_DIR)/rede_search.db
 CNPJ_MEM_LIMIT ?= 8096
-CNPJ_BATCH     ?= 500000
+CNPJ_BATCH     ?= 5000
 CNPJ_THREADS   ?= 12
 CNPJ_CONC      ?= 6
 
@@ -128,7 +128,9 @@ build-web-image: ## Constrói apenas a imagem Docker do frontend web
 build-ai-image: ## Constrói apenas a imagem Docker do AI Gateway
 	@$(DOCKER_COMPOSE) build ai-gateway
 
-build-native: build-server build-worker build-etl ## Compila binários Rust nativos (--release) e frontend
+build-native: ## Compila binários Rust nativos (--release) e frontend
+	@echo -e "${CYAN}Compilando binários nativos (ecd-server, ecd-worker, rfb-cnpj-etl) em --release...${RESET}"
+	@cargo build --release -p ecd-server -p ecd-worker -p rfb-cnpj-etl
 	@if command -v npm >/dev/null 2>&1 && [ -d apps/web ]; then \
 		echo -e "${CYAN}Compilando frontend SPA estático...${RESET}"; \
 		(cd apps/web && npm run build); \
@@ -228,8 +230,13 @@ generate-mock: ## Gera arquivos SPED sintéticos de teste via scripts/gerar_mass
 # PIPELINE RFB CNPJ ETL (DADOS ABERTOS)
 # ==============================================================================
 .PHONY: cnpj-all cnpj-download cnpj-build cnpj-rede cnpj-status
+.NOTPARALLEL: cnpj-all cnpj-download cnpj-build cnpj-rede cnpj-status
 
-cnpj-all: cnpj-download cnpj-build cnpj-rede cnpj-status ## Executa o pipeline completo do RFB CNPJ ETL
+cnpj-all: ## Executa o pipeline completo do RFB CNPJ ETL
+	@$(MAKE) cnpj-download
+	@$(MAKE) cnpj-build
+	@$(MAKE) cnpj-rede
+	@$(MAKE) cnpj-status
 
 cnpj-download: ## Baixa os 37 arquivos compactados (.zip) da RFB com HTTP 206 resume
 	@mkdir -p $(CNPJ_ZIP_DIR)

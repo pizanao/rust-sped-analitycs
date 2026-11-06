@@ -146,21 +146,42 @@ fn tabela_links_attached_existe(conn: &Connection) -> bool {
     .unwrap_or(false)
 }
 
-/// Verifica se a tabela `links` está disponível no banco principal ou em banco anexado (`links_db`).
-fn tabela_links_existe(conn: &Connection) -> bool {
-    tabela_links_main_existe(conn) || tabela_links_attached_existe(conn)
+/// Constrói as queries parametrizadas de consulta à tabela `links` (em `main` e/ou `links_db`)
+/// inspecionando o schema apenas uma vez por operação/lote.
+fn construir_queries_sancoes(conn: &Connection) -> Vec<String> {
+    let mut queries = Vec::with_capacity(2);
+
+    if tabela_links_main_existe(conn) {
+        let col = coluna_detalhe_links(conn, "main");
+        queries.push(format!(
+            "SELECT COALESCE(id1, ''), COALESCE(id2, ''), COALESCE(descricao, ''), {col}
+             FROM main.links
+             WHERE id1 = ?1 OR id2 = ?1"
+        ));
+    }
+    if tabela_links_attached_existe(conn) {
+        let col = coluna_detalhe_links(conn, "links_db");
+        queries.push(format!(
+            "SELECT COALESCE(id1, ''), COALESCE(id2, ''), COALESCE(descricao, ''), {col}
+             FROM links_db.links
+             WHERE id1 = ?1 OR id2 = ?1"
+        ));
+    }
+
+    queries
 }
 
 impl SqliteGraphStore {
     /// Consulta todas as sanções detalhadas vinculadas a uma única entidade (`PJ` ou `PF`).
     pub fn consultar_sancoes(&self, entidade_id: &str) -> Result<Vec<SanctionRecord>> {
         let conn = self.get_conn()?;
-        if !tabela_links_existe(&conn) {
+        let queries = construir_queries_sancoes(&conn);
+        if queries.is_empty() {
             return Ok(Vec::new());
         }
 
         let tx = conn.unchecked_transaction()?;
-        let records = consultar_sancoes_conn(&tx, entidade_id)?;
+        let records = consultar_sancoes_conn(&tx, entidade_id, &queries)?;
         tx.commit()?;
         Ok(records)
     }
@@ -182,13 +203,18 @@ pub(crate) fn cruzar_sancoes_em_conexao(
     entidade_ids: &[String],
 ) -> Result<HashMap<String, Vec<String>>> {
     let mut resultado: HashMap<String, Vec<String>> = HashMap::with_capacity(entidade_ids.len());
-    if entidade_ids.is_empty() || !tabela_links_existe(conn) {
+    if entidade_ids.is_empty() {
+        return Ok(resultado);
+    }
+
+    let queries = construir_queries_sancoes(conn);
+    if queries.is_empty() {
         return Ok(resultado);
     }
 
     let tx = conn.unchecked_transaction()?;
     for entidade_id in entidade_ids {
-        let records = consultar_sancoes_conn(&tx, entidade_id)?;
+        let records = consultar_sancoes_conn(&tx, entidade_id, &queries)?;
         if !records.is_empty() {
             let mut flags = BTreeSet::new();
             for rec in records {
@@ -225,29 +251,18 @@ fn coluna_detalhe_links(conn: &Connection, schema: &str) -> &'static str {
     }
 }
 
-fn consultar_sancoes_conn(conn: &Connection, entidade_id: &str) -> Result<Vec<SanctionRecord>> {
+fn consultar_sancoes_conn(
+    conn: &Connection,
+    entidade_id: &str,
+    queries: &[String],
+) -> Result<Vec<SanctionRecord>> {
     let candidates = chaves_candidatas_entidade(entidade_id);
-    let mut queries = Vec::with_capacity(2);
-
-    if tabela_links_main_existe(conn) {
-        let col = coluna_detalhe_links(conn, "main");
-        queries.push(format!(
-            "SELECT COALESCE(id1, ''), COALESCE(id2, ''), COALESCE(descricao, ''), {col}
-             FROM main.links
-             WHERE id1 = ?1 OR id2 = ?1"
-        ));
-    }
-    if tabela_links_attached_existe(conn) {
-        let col = coluna_detalhe_links(conn, "links_db");
-        queries.push(format!(
-            "SELECT COALESCE(id1, ''), COALESCE(id2, ''), COALESCE(descricao, ''), {col}
-             FROM links_db.links
-             WHERE id1 = ?1 OR id2 = ?1"
-        ));
+    if candidates.is_empty() || queries.is_empty() {
+        return Ok(Vec::new());
     }
 
     let mut records = Vec::new();
-    for sql in &queries {
+    for sql in queries {
         let mut stmt = conn.prepare_cached(sql)?;
         for key in &candidates {
             let rows = stmt.query_map([key], |row| {

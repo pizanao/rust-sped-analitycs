@@ -27,6 +27,7 @@ data/
 *.db
 *.db-journal
 *.db-wal
+*.db-shm
 *.log
 
 # IDE & Editor
@@ -43,6 +44,7 @@ output/
 dados-publicos/
 dados-publicos-zip/
 *.db-shm
+*.db-wal
 *.part
 *.tmp*
 .superpowers/

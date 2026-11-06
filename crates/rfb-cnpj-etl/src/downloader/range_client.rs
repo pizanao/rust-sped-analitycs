@@ -118,18 +118,20 @@ impl RangeClient {
         let dest = &target.destination_path;
         let part_file = dest.with_extension("zip.part");
 
-        // 1. If final destination file already exists and matches expected size, skip!
+        // 1. If final destination file already exists and matches expected size (or is non-empty when size is unknown), skip!
         if dest.exists() {
             let existing_len = tokio::fs::metadata(dest).await?.len();
-            if let Some(expected) = target.expected_size {
-                if existing_len == expected && expected > 0 {
-                    pb.set_length(existing_len);
-                    pb.set_position(existing_len);
-                    pb.finish_with_message(format!("✔ {} (cached)", target.filename));
-                    return Ok(DownloadResult::AlreadyComplete {
-                        total_bytes: existing_len,
-                    });
-                }
+            let is_valid_cached = match target.expected_size {
+                Some(expected) => existing_len == expected && expected > 0,
+                None => existing_len > 0 && !part_file.exists(),
+            };
+            if is_valid_cached {
+                pb.set_length(existing_len);
+                pb.set_position(existing_len);
+                pb.finish_with_message(format!("✔ {} (cached)", target.filename));
+                return Ok(DownloadResult::AlreadyComplete {
+                    total_bytes: existing_len,
+                });
             }
         }
 
@@ -688,5 +690,25 @@ mod tests {
         // Verify that the 300 bytes received before disconnect were flushed to disk in .part!
         assert!(part_file.exists());
         assert_eq!(tokio::fs::metadata(&part_file).await.unwrap().len(), 300);
+    }
+
+    #[tokio::test]
+    async fn test_download_file_skips_cached_when_expected_size_none() {
+        let temp_dir = tempfile::tempdir().unwrap();
+        let dest = temp_dir.path().join("CachedFallback.zip");
+        tokio::fs::write(&dest, vec![0x50u8; 512]).await.unwrap();
+
+        let target = DownloadTarget {
+            url: "http://127.0.0.1:1/unreachable.zip".to_string(),
+            filename: "CachedFallback.zip".to_string(),
+            destination_path: dest.clone(),
+            expected_size: None,
+        };
+
+        let client = RangeClient::new(RangeClientConfig::default()).unwrap();
+        let pb = ProgressBar::hidden();
+
+        let res = client.download_file(&target, &pb).await.unwrap();
+        assert_eq!(res, DownloadResult::AlreadyComplete { total_bytes: 512 });
     }
 }

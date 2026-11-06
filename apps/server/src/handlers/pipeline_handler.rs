@@ -28,13 +28,44 @@ impl Drop for PipelineRunGuard {
 }
 
 fn resolve_pipeline_path() -> PathBuf {
-    std::env::var("RFB_PIPELINE_PATH")
-        .map(PathBuf::from)
-        .unwrap_or_else(|_| {
-            PathBuf::from(
-                "/home/pizani/Documents/dados_abertos/rede-cnpj-master-v26/rede_cria_tabelas",
-            )
-        })
+    if let Ok(path) = std::env::var("RFB_PIPELINE_PATH") {
+        let trimmed = path.trim();
+        if !trimmed.is_empty() {
+            return PathBuf::from(trimmed);
+        }
+    }
+
+    let current = PathBuf::from(".");
+    if current.join("Makefile").exists() {
+        return current;
+    }
+
+    let manifest_dir = PathBuf::from(env!("CARGO_MANIFEST_DIR"));
+    if let Some(workspace_root) = manifest_dir.parent().and_then(|p| p.parent()) {
+        if workspace_root.join("Makefile").exists() {
+            return workspace_root.to_path_buf();
+        }
+        let crate_dir = workspace_root.join("crates/rfb-cnpj-etl");
+        if crate_dir.join("Makefile").exists() {
+            return crate_dir;
+        }
+    }
+
+    current
+}
+
+fn resolve_make_target(component: &str, uses_cnpj_prefix: bool) -> Option<&'static str> {
+    match (component, uses_cnpj_prefix) {
+        ("download" | "cnpj-download", true) => Some("cnpj-download"),
+        ("download" | "cnpj-download", false) => Some("download"),
+        ("build-cnpj" | "cnpj-build", true) => Some("cnpj-build"),
+        ("build-cnpj" | "cnpj-build", false) => Some("build-cnpj"),
+        ("build-rede" | "cnpj-rede", true) => Some("cnpj-rede"),
+        ("build-rede" | "cnpj-rede", false) => Some("build-rede"),
+        ("all" | "cnpj-all", true) => Some("cnpj-all"),
+        ("all" | "cnpj-all", false) => Some("all"),
+        _ => None,
+    }
 }
 
 /// Status de execução do pipeline
@@ -134,8 +165,11 @@ pub async fn get_pipeline_status_handler(State(_state): State<AppState>) -> impl
     let has_search_db = data_dir.join("rede_search.db").exists();
 
     // Determinar status geral
+    let is_running = PIPELINE_RUNNING.load(Ordering::SeqCst);
     let status = if !has_makefile {
         PipelineStatusEnum::Failed
+    } else if is_running {
+        PipelineStatusEnum::Running
     } else if has_cnpj_db && has_rede_db && has_search_db {
         PipelineStatusEnum::Success
     } else {
@@ -280,24 +314,23 @@ pub async fn execute_pipeline_handler(
             .into_response();
     }
 
-    // Determinar comando baseado no componente
-    let make_target = match request.component.as_str() {
-        "download" => "download",
-        "build-cnpj" => "build-cnpj",
-        "build-rede" => "build-rede",
-        "all" => "all",
-        _ => {
-            return (
-                StatusCode::BAD_REQUEST,
-                Json(ExecutePipelineResponse {
-                    success: false,
-                    message: format!("Componente inválido: {}", request.component),
-                    job_id: None,
-                    timestamp: Utc::now().to_rfc3339(),
-                }),
-            )
-                .into_response();
-        }
+    // Determinar comando baseado no componente e nos alvos do Makefile
+    let uses_cnpj_prefix = std::fs::read_to_string(pipeline_path.join("Makefile"))
+        .map(|content| content.contains("cnpj-download:"))
+        .unwrap_or(true);
+
+    let Some(make_target) = resolve_make_target(request.component.as_str(), uses_cnpj_prefix)
+    else {
+        return (
+            StatusCode::BAD_REQUEST,
+            Json(ExecutePipelineResponse {
+                success: false,
+                message: format!("Componente inválido: {}", request.component),
+                job_id: None,
+                timestamp: Utc::now().to_rfc3339(),
+            }),
+        )
+            .into_response();
     };
 
     if PIPELINE_RUNNING
@@ -315,54 +348,46 @@ pub async fn execute_pipeline_handler(
         )
             .into_response();
     }
-    let _run_guard = PipelineRunGuard;
 
-    // Executar comando make
-    let output = Command::new("make")
-        .arg(make_target)
-        .env("PROFILE", profile)
-        .current_dir(&pipeline_path)
-        .output()
-        .await;
+    let job_id = uuid::Uuid::new_v4().to_string();
+    let target_owned = make_target.to_string();
+    let profile_owned = profile.to_string();
+    let dir_owned = pipeline_path.clone();
 
-    match output {
-        Ok(output) => {
-            if output.status.success() {
-                (
-                    StatusCode::OK,
-                    Json(ExecutePipelineResponse {
-                        success: true,
-                        message: format!("Pipeline executado com sucesso: {}", make_target),
-                        job_id: Some(uuid::Uuid::new_v4().to_string()),
-                        timestamp: Utc::now().to_rfc3339(),
-                    }),
-                )
-                    .into_response()
-            } else {
-                let stderr = String::from_utf8_lossy(&output.stderr);
-                (
-                    StatusCode::INTERNAL_SERVER_ERROR,
-                    Json(ExecutePipelineResponse {
-                        success: false,
-                        message: format!("Falha ao executar pipeline: {}", stderr),
-                        job_id: None,
-                        timestamp: Utc::now().to_rfc3339(),
-                    }),
-                )
-                    .into_response()
+    // Dispara execução em background para não bloquear o handler HTTP nem causar timeout (HTTP 504)
+    tokio::spawn(async move {
+        let _run_guard = PipelineRunGuard;
+        let output = Command::new("make")
+            .arg(&target_owned)
+            .env("PROFILE", &profile_owned)
+            .current_dir(&dir_owned)
+            .output()
+            .await;
+
+        match output {
+            Ok(out) if out.status.success() => {
+                tracing::info!("Pipeline '{target_owned}' concluído com sucesso");
+            }
+            Ok(out) => {
+                let stderr = String::from_utf8_lossy(&out.stderr);
+                tracing::error!("Falha ao executar pipeline '{target_owned}': {stderr}");
+            }
+            Err(err) => {
+                tracing::error!("Erro ao iniciar comando make para '{target_owned}': {err}");
             }
         }
-        Err(err) => (
-            StatusCode::INTERNAL_SERVER_ERROR,
-            Json(ExecutePipelineResponse {
-                success: false,
-                message: format!("Erro ao executar comando make: {}", err),
-                job_id: None,
-                timestamp: Utc::now().to_rfc3339(),
-            }),
-        )
-            .into_response(),
-    }
+    });
+
+    (
+        StatusCode::ACCEPTED,
+        Json(ExecutePipelineResponse {
+            success: true,
+            message: format!("Pipeline iniciado em background: {}", make_target),
+            job_id: Some(job_id),
+            timestamp: Utc::now().to_rfc3339(),
+        }),
+    )
+        .into_response()
 }
 
 /// Verifica performance comparativa vs Python legado
@@ -400,4 +425,31 @@ pub async fn get_performance_comparison_handler() -> impl IntoResponse {
     };
 
     (StatusCode::OK, Json(comparison)).into_response()
+}
+
+#[cfg(test)]
+mod tests {
+    use super::*;
+
+    #[test]
+    fn test_resolve_pipeline_path_exists_by_default() {
+        let path = resolve_pipeline_path();
+        assert!(path.exists());
+        assert!(path.join("Makefile").exists());
+    }
+
+    #[test]
+    fn test_resolve_make_target_mapping() {
+        assert_eq!(resolve_make_target("download", true), Some("cnpj-download"));
+        assert_eq!(resolve_make_target("build-cnpj", true), Some("cnpj-build"));
+        assert_eq!(resolve_make_target("build-rede", true), Some("cnpj-rede"));
+        assert_eq!(resolve_make_target("all", true), Some("cnpj-all"));
+
+        assert_eq!(resolve_make_target("download", false), Some("download"));
+        assert_eq!(resolve_make_target("build-cnpj", false), Some("build-cnpj"));
+        assert_eq!(resolve_make_target("build-rede", false), Some("build-rede"));
+        assert_eq!(resolve_make_target("all", false), Some("all"));
+
+        assert_eq!(resolve_make_target("invalid", true), None);
+    }
 }

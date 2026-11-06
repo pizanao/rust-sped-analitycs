@@ -35,7 +35,7 @@ SEARCH_DB      ?= $(DATA_DIR)/rede_search.db
 # Performance, Concurrency & Tuning Parameters
 # ------------------------------------------------------------------------------
 MEM_LIMIT      ?= 8096
-BATCH_SIZE     ?= 500000
+BATCH_SIZE     ?= 5000
 THREADS        ?= 12
 CONCURRENCY    ?= 6
 DROP_EXISTING  ?= 1

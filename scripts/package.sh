@@ -82,11 +82,29 @@ chmod +x "${STAGE_DIR}/scripts/"*.py
 
 echo "📋 Copiando manifestos e configurações..."
 cp -f "${ROOT_DIR}/docker-compose.yml" "${STAGE_DIR}/"
-[[ -f "${ROOT_DIR}/Dockerfile.server" ]] && cp -f "${ROOT_DIR}/Dockerfile.server" "${STAGE_DIR}/"
-[[ -f "${ROOT_DIR}/Dockerfile.worker" ]] && cp -f "${ROOT_DIR}/Dockerfile.worker" "${STAGE_DIR}/"
 [[ -f "${ROOT_DIR}/.env.example" ]] && cp -f "${ROOT_DIR}/.env.example" "${STAGE_DIR}/"
 [[ -f "${ROOT_DIR}/README.md" ]] && cp -f "${ROOT_DIR}/README.md" "${STAGE_DIR}/"
 [[ -f "${ROOT_DIR}/LICENSE" ]] && cp -f "${ROOT_DIR}/LICENSE" "${STAGE_DIR}/"
+
+# Gerar Dockerfiles de runtime para os binários pré-compilados (sem exigir código-fonte Rust)
+cat << 'EOF' > "${STAGE_DIR}/Dockerfile.server"
+FROM debian:bookworm-slim
+WORKDIR /app
+RUN apt-get update && apt-get install -y --no-install-recommends ca-certificates curl && rm -rf /var/lib/apt/lists/*
+COPY bin/ecd-server /usr/local/bin/ecd-server
+COPY bin/rfb-cnpj-etl /usr/local/bin/rfb-cnpj-etl
+ENV PORT=8080
+EXPOSE 8080
+CMD ["ecd-server"]
+EOF
+
+cat << 'EOF' > "${STAGE_DIR}/Dockerfile.worker"
+FROM debian:bookworm-slim
+WORKDIR /app
+RUN apt-get update && apt-get install -y --no-install-recommends ca-certificates curl && rm -rf /var/lib/apt/lists/*
+COPY bin/ecd-worker /usr/local/bin/ecd-worker
+CMD ["ecd-worker"]
+EOF
 
 # 7. Criar script de inicialização standalone no pacote
 cat << 'EOF' > "${STAGE_DIR}/run.sh"
@@ -102,10 +120,25 @@ if [[ ! -f .env ]]; then
     fi
 fi
 
-echo "🚀 Iniciando Rust Sped Analytics (Docker Compose)..."
-docker compose up -d
-echo "✅ Serviços em execução!"
-docker compose ps
+if [[ -f .env ]]; then
+    set -a
+    # shellcheck disable=SC1091
+    source .env
+    set +a
+fi
+
+if command -v docker >/dev/null 2>&1; then
+    echo "🚀 Iniciando infraestrutura (PostgreSQL e Redis) via Docker Compose..."
+    docker compose up -d postgres redis
+fi
+
+echo "🚀 Iniciando binários pré-compilados (ecd-worker e ecd-server)..."
+export PATH="${DIR}/bin:${PATH}"
+"${DIR}/bin/ecd-worker" &
+WORKER_PID=$!
+trap 'kill "${WORKER_PID}" 2>/dev/null || true' EXIT
+echo "✅ Worker iniciado (PID: ${WORKER_PID}). Iniciando servidor HTTP..."
+exec "${DIR}/bin/ecd-server"
 EOF
 chmod +x "${STAGE_DIR}/run.sh"
 
