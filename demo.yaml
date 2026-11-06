@@ -16,7 +16,7 @@ scenes:
 - id: scene_01_abertura
   title: Abertura - Pipeline RFB CNPJ
   narration: Olá pessoal! Sejam bem-vindos à demonstração do Rust Sped Analytics.
-    Aqui estamos vendo o pipeline RFB CNPJ processando setenta, e quatro virgula cinco
+    Aqui estamos vendo o pipeline RFB CNPJ processando setenta e quatro vírgula cinco
     gigabytes da Receita Federal em apenas seis minutos e dezessete segundos. Isso
     representa um speedup de sete vírgula cinco vezes em relação ao Python legado,
     com setenta e sete por cento menos memória.
@@ -237,7 +237,7 @@ scenes:
 - id: scene_15_ai_copilot
   title: AI Copilot - Consulta em Linguagem Natural
   narration: Por fim, o AI Copilot. Abro o drawer e pergunto em linguagem natural.
-    "Qual a receita de serviços da Petrobras em 2023?" O, agente ReAct via LangGraph
+    "Qual a receita de serviços da Petrobras em 2023?" O agente ReAct via LangGraph
     consulta o backend, gera a resposta e especifica um gráfico Recharts para renderizar.
   pause_after: 1.0
   actions:

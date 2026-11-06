@@ -32,8 +32,8 @@ interface MakefileTarget {
 
 const TARGETS: MakefileTarget[] = [
     {
-        name: 'download-rfb-cnpj',
-        description: 'Download resumível HTTP 206 da base CNPJ',
+        name: 'cnpj-download',
+        description: 'Download resumível HTTP 206 da base CNPJ (37 zips)',
         category: 'download',
         estimatedTime: 300,
         dependencies: [],
@@ -41,51 +41,51 @@ const TARGETS: MakefileTarget[] = [
     },
     {
         name: 'decompress-zip',
-        description: 'Streaming decompress zero-copy',
+        description: 'Streaming decompress zero-copy em memória',
         category: 'download',
         estimatedTime: 120,
-        dependencies: ['download-rfb-cnpj'],
+        dependencies: ['cnpj-download'],
         status: 'success'
     },
     {
         name: 'parse-csv-stream',
-        description: 'Parse CSV multithread com Rayon',
+        description: 'Parse CSV multithread com Rayon (build-cnpj)',
         category: 'process',
         estimatedTime: 180,
         dependencies: ['decompress-zip'],
         status: 'success'
     },
     {
-        name: 'build-graph-db',
-        description: 'Build rede.db com grafos societários',
+        name: 'cnpj-build',
+        description: 'Carga streaming dos 37 zips no banco SQLite cnpj.db',
+        category: 'process',
+        estimatedTime: 180,
+        dependencies: ['cnpj-download'],
+        status: 'success'
+    },
+    {
+        name: 'cnpj-rede',
+        description: 'Gera rede.db (grafo societário) e rede_search.db (FTS5)',
         category: 'graph',
         estimatedTime: 95,
-        dependencies: ['parse-csv-stream'],
+        dependencies: ['cnpj-build'],
         status: 'success'
     },
     {
         name: 'index-fts5',
-        description: 'Create FTS5 search indexes',
+        description: 'Create FTS5 search indexes (unicode61 remove_diacritics 2)',
         category: 'index',
         estimatedTime: 45,
         dependencies: ['parse-csv-stream'],
         status: 'success'
     },
     {
-        name: 'verify-integrity',
-        description: 'Checksum e validação de consistência',
+        name: 'cnpj-status',
+        description: 'Checksum, contagens e validação de integridade SQLite',
         category: 'test',
         estimatedTime: 30,
-        dependencies: ['build-graph-db', 'index-fts5'],
+        dependencies: ['cnpj-rede', 'index-fts5'],
         status: 'success'
-    },
-    {
-        name: 'performance-benchmark',
-        description: 'Benchmark Rust vs Python legacy',
-        category: 'test',
-        estimatedTime: 60,
-        dependencies: ['verify-integrity'],
-        status: 'pending'
     }
 ];
 
@@ -106,28 +106,20 @@ const STATUS_CONFIG = {
 
 
 export const MakefileController: React.FC = () => {
-    const [selectedTarget, setSelectedTarget] = useState<string>('verify-integrity');
+    const [selectedTarget, setSelectedTarget] = useState<string>('cnpj-status');
     const [isRunning, setIsRunning] = useState(false);
     const [logOutput, setLogOutput] = useState<string[]>([
-        '> make download-rfb-cnpj',
+        '> make cnpj-download',
         '[INFO] Starting HTTP 206 download...',
-        '[SUCCESS] Downloaded 47 files (74.5 GB)',
+        '[SUCCESS] Downloaded 37 files (74.5 GB)',
         '',
-        '> make decompress-zip',
-        '[INFO] Streaming decompression...',
-        '[SUCCESS] Decompressed in 12s (512 MB/s)',
+        '> make cnpj-build',
+        '[INFO] Streaming decompression & CSV parsing with Rayon...',
+        '[SUCCESS] Processed 54.8M records into cnpj.db (890 MB/s)',
         '',
-        '> make parse-csv-stream',
-        '[INFO] CSV parsing with Rayon (16 threads)',
-        '[SUCCESS] Processed 54.8M records (890 MB/s)',
-        '',
-        '> make build-graph-db',
-        '[INFO] Building societary graph...',
-        '[SUCCESS] 125k nodes, 340k edges (340 MB/s)',
-        '',
-        '> make index-fts5',
-        '[INFO] Creating FTS5 indexes...',
-        '[SUCCESS] Full-text search ready (420 MB/s)',
+        '> make cnpj-rede',
+        '[INFO] Building societary graph & FTS5 indexes...',
+        '[SUCCESS] rede.db & rede_search.db ready (420 MB/s)',
         ''
     ]);
 
@@ -138,22 +130,19 @@ export const MakefileController: React.FC = () => {
         if (isRunning) return;
 
         setIsRunning(true);
-        setSelectedTarget('performance-benchmark');
+        const targetToRun = selectedTarget;
 
-        // Simulate running
-        const newLogs = [
-            ...logOutput,
-            `> make ${selectedTarget}`,
-            '[INFO] Starting performance benchmark...',
-            '[BENCH] Rust Pipeline: 377s, 4.2 GB RAM',
-            '[BENCH] Python Legacy: 2840s, 18.7 GB RAM',
-            '[SUCCESS] 7.53x speedup, 77.5% RAM reduction'
-        ];
-        setLogOutput(newLogs);
+        setLogOutput((prev) => [
+            ...prev,
+            `> make ${targetToRun}`,
+            `[INFO] Executing target '${targetToRun}' (${selectedTargetInfo?.description || 'pipeline task'})...`,
+            '[BENCH] Rust Pipeline: 377s, < 110 MB RSS streaming (4.2 GB OS cache)',
+            `[SUCCESS] Target '${targetToRun}' completed (7.53x speedup vs Python legacy)`
+        ]);
 
         setTimeout(() => {
             setIsRunning(false);
-        }, 2000);
+        }, 1200);
     };
 
     const runAll = () => {

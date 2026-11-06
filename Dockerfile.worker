@@ -2,7 +2,8 @@
 # Rust Sped Analytics - Background Consumer Worker Dockerfile (Multi-stage Build)
 # ==============================================================================
 
-FROM rust:1.99-bookworm AS builder
+ARG RUST_IMAGE=rust:1.85-slim-bookworm
+FROM ${RUST_IMAGE} AS builder
 
 WORKDIR /usr/src/app
 
@@ -19,7 +20,7 @@ COPY apps/worker ./apps/worker
 
 RUN cargo build --release -p ecd-worker
 
-FROM rust:1.99-bookworm AS runtime
+FROM debian:bookworm-slim AS runtime
 
 WORKDIR /app
 

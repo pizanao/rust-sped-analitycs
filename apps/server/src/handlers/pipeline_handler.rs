@@ -12,18 +12,64 @@ use axum::{
 use chrono::Utc;
 use serde::{Deserialize, Serialize};
 use std::{
-    path::PathBuf,
-    sync::atomic::{AtomicBool, Ordering},
+    path::{Path, PathBuf},
+    sync::{
+        atomic::{AtomicBool, Ordering},
+        Mutex,
+    },
 };
 use tokio::process::Command;
 
 static PIPELINE_RUNNING: AtomicBool = AtomicBool::new(false);
+static LAST_RUN_FAILED: AtomicBool = AtomicBool::new(false);
+static ACTIVE_COMPONENT: Mutex<Option<String>> = Mutex::new(None);
 
 struct PipelineRunGuard;
 
 impl Drop for PipelineRunGuard {
     fn drop(&mut self) {
+        if let Ok(mut active) = ACTIVE_COMPONENT.lock() {
+            *active = None;
+        }
         PIPELINE_RUNNING.store(false, Ordering::SeqCst);
+    }
+}
+
+fn find_etl_binary(pipeline_path: &Path) -> Option<PathBuf> {
+    let candidates = [
+        pipeline_path.join("bin/rfb-cnpj-etl"),
+        pipeline_path.join("target/release/rfb-cnpj-etl"),
+        pipeline_path.join("target/debug/rfb-cnpj-etl"),
+        PathBuf::from("/usr/local/bin/rfb-cnpj-etl"),
+    ];
+    candidates.into_iter().find(|candidate| candidate.is_file())
+}
+
+fn count_zip_files(zip_dir: &Path) -> u64 {
+    std::fs::read_dir(zip_dir)
+        .ok()
+        .map(|entries| {
+            entries
+                .filter_map(Result::ok)
+                .filter(|e| {
+                    e.path()
+                        .extension()
+                        .and_then(|ext| ext.to_str())
+                        .map(|ext| ext.eq_ignore_ascii_case("zip"))
+                        .unwrap_or(false)
+                })
+                .count() as u64
+        })
+        .unwrap_or(0)
+}
+
+fn normalize_component_id(component: &str) -> Option<&'static str> {
+    match component {
+        "download" | "cnpj-download" => Some("download"),
+        "build-cnpj" | "cnpj-build" => Some("build-cnpj"),
+        "build-rede" | "cnpj-rede" => Some("build-rede"),
+        "all" | "cnpj-all" => Some("all"),
+        _ => None,
     }
 }
 
@@ -154,23 +200,66 @@ pub async fn get_pipeline_status_handler(State(_state): State<AppState>) -> impl
             .into_response();
     }
 
-    // Verificar Makefile
+    // Verificar Makefile ou binário pré-compilado (pacote de distribuição / Docker runtime)
     let makefile_path = pipeline_path.join("Makefile");
-    let has_makefile = makefile_path.exists();
+    let has_runner = makefile_path.exists() || find_etl_binary(&pipeline_path).is_some();
 
-    // Verificar bancos de dados existentes
+    // Verificar arquivos ZIP e bancos de dados existentes
+    let zip_dir = pipeline_path.join("dados-publicos-zip");
+    let zip_count = count_zip_files(&zip_dir);
     let data_dir = pipeline_path.join("dados-publicos");
     let has_cnpj_db = data_dir.join("cnpj.db").exists();
     let has_rede_db = data_dir.join("rede.db").exists();
     let has_search_db = data_dir.join("rede_search.db").exists();
 
-    // Determinar status geral
+    // Determinar status geral e componente ativo
     let is_running = PIPELINE_RUNNING.load(Ordering::SeqCst);
-    let status = if !has_makefile {
+    let last_failed = LAST_RUN_FAILED.load(Ordering::SeqCst);
+    let active_comp = ACTIVE_COMPONENT.lock().ok().and_then(|guard| guard.clone());
+
+    let status = if !has_runner || last_failed {
         PipelineStatusEnum::Failed
     } else if is_running {
         PipelineStatusEnum::Running
     } else if has_cnpj_db && has_rede_db && has_search_db {
+        PipelineStatusEnum::Success
+    } else {
+        PipelineStatusEnum::Idle
+    };
+
+    let is_comp_running = |comp_id: &str| -> bool {
+        is_running
+            && matches!(
+                active_comp.as_deref(),
+                Some(active) if active == comp_id || active == "all"
+            )
+    };
+
+    let download_done = zip_count >= 37 || has_cnpj_db;
+    let download_progress = if download_done {
+        100
+    } else {
+        ((zip_count.min(37) * 100) / 37) as u8
+    };
+    let download_status = if is_comp_running("download") {
+        PipelineStatusEnum::Running
+    } else if download_done {
+        PipelineStatusEnum::Success
+    } else {
+        PipelineStatusEnum::Idle
+    };
+
+    let build_cnpj_status = if is_comp_running("build-cnpj") {
+        PipelineStatusEnum::Running
+    } else if has_cnpj_db {
+        PipelineStatusEnum::Success
+    } else {
+        PipelineStatusEnum::Idle
+    };
+
+    let build_rede_status = if is_comp_running("build-rede") {
+        PipelineStatusEnum::Running
+    } else if has_rede_db && has_search_db {
         PipelineStatusEnum::Success
     } else {
         PipelineStatusEnum::Idle
@@ -183,10 +272,14 @@ pub async fn get_pipeline_status_handler(State(_state): State<AppState>) -> impl
             name: "Download RFB".to_string(),
             description: "Download resumível HTTP 206 dos 37 arquivos ZIP da Receita Federal"
                 .to_string(),
-            status: PipelineStatusEnum::Success, // Assume download completo
-            progress: 100,
+            status: download_status,
+            progress: download_progress,
             metrics: Some(ComponentMetrics {
-                items_processed: Some(37), // 37 arquivos
+                items_processed: Some(if download_done && zip_count == 0 {
+                    37
+                } else {
+                    zip_count
+                }),
                 time_elapsed: None,
                 throughput: None,
                 memory_usage_mb: Some(50),
@@ -197,11 +290,7 @@ pub async fn get_pipeline_status_handler(State(_state): State<AppState>) -> impl
             name: "CNPJ Database".to_string(),
             description: "Ingestão zero-copy e criação das 12 tabelas SQLite com 18 índices"
                 .to_string(),
-            status: if has_cnpj_db {
-                PipelineStatusEnum::Success
-            } else {
-                PipelineStatusEnum::Idle
-            },
+            status: build_cnpj_status,
             progress: if has_cnpj_db { 100 } else { 0 },
             metrics: Some(ComponentMetrics {
                 items_processed: None,
@@ -216,11 +305,7 @@ pub async fn get_pipeline_status_handler(State(_state): State<AppState>) -> impl
             description:
                 "Derivação das 7 regras de relacionamento e FTS5 com unicode61 remove_diacritics"
                     .to_string(),
-            status: if has_rede_db && has_search_db {
-                PipelineStatusEnum::Success
-            } else {
-                PipelineStatusEnum::Idle
-            },
+            status: build_rede_status,
             progress: if has_rede_db && has_search_db { 100 } else { 0 },
             metrics: Some(ComponentMetrics {
                 items_processed: None,
@@ -319,8 +404,10 @@ pub async fn execute_pipeline_handler(
         .map(|content| content.contains("cnpj-download:"))
         .unwrap_or(true);
 
-    let Some(make_target) = resolve_make_target(request.component.as_str(), uses_cnpj_prefix)
-    else {
+    let (Some(make_target), Some(normalized_comp)) = (
+        resolve_make_target(request.component.as_str(), uses_cnpj_prefix),
+        normalize_component_id(request.component.as_str()),
+    ) else {
         return (
             StatusCode::BAD_REQUEST,
             Json(ExecutePipelineResponse {
@@ -349,31 +436,54 @@ pub async fn execute_pipeline_handler(
             .into_response();
     }
 
+    LAST_RUN_FAILED.store(false, Ordering::SeqCst);
+    if let Ok(mut active) = ACTIVE_COMPONENT.lock() {
+        *active = Some(normalized_comp.to_string());
+    }
+
     let job_id = uuid::Uuid::new_v4().to_string();
     let target_owned = make_target.to_string();
+    let comp_owned = normalized_comp.to_string();
     let profile_owned = profile.to_string();
     let dir_owned = pipeline_path.clone();
 
     // Dispara execução em background para não bloquear o handler HTTP nem causar timeout (HTTP 504)
     tokio::spawn(async move {
         let _run_guard = PipelineRunGuard;
-        let output = Command::new("make")
-            .arg(&target_owned)
-            .env("PROFILE", &profile_owned)
-            .current_dir(&dir_owned)
-            .output()
-            .await;
+        let has_makefile = dir_owned.join("Makefile").exists();
+        let etl_bin = find_etl_binary(&dir_owned);
+
+        let output = if !has_makefile {
+            if let Some(bin_path) = etl_bin {
+                run_etl_binary_direct(&bin_path, &comp_owned, &dir_owned).await
+            } else {
+                Err(std::io::Error::new(
+                    std::io::ErrorKind::NotFound,
+                    "Nem Makefile nem binário rfb-cnpj-etl encontrados",
+                ))
+            }
+        } else {
+            Command::new("make")
+                .arg(&target_owned)
+                .env("PROFILE", &profile_owned)
+                .current_dir(&dir_owned)
+                .output()
+                .await
+        };
 
         match output {
             Ok(out) if out.status.success() => {
+                LAST_RUN_FAILED.store(false, Ordering::SeqCst);
                 tracing::info!("Pipeline '{target_owned}' concluído com sucesso");
             }
             Ok(out) => {
+                LAST_RUN_FAILED.store(true, Ordering::SeqCst);
                 let stderr = String::from_utf8_lossy(&out.stderr);
                 tracing::error!("Falha ao executar pipeline '{target_owned}': {stderr}");
             }
             Err(err) => {
-                tracing::error!("Erro ao iniciar comando make para '{target_owned}': {err}");
+                LAST_RUN_FAILED.store(true, Ordering::SeqCst);
+                tracing::error!("Erro ao iniciar execução para '{target_owned}': {err}");
             }
         }
     });
@@ -388,6 +498,90 @@ pub async fn execute_pipeline_handler(
         }),
     )
         .into_response()
+}
+
+async fn run_etl_binary_direct(
+    bin_path: &Path,
+    component: &str,
+    work_dir: &Path,
+) -> std::io::Result<std::process::Output> {
+    let steps: &[&str] = match component {
+        "download" => &["download"],
+        "build-cnpj" => &["build-cnpj"],
+        "build-rede" => &["build-rede"],
+        "all" => &["download", "build-cnpj", "build-rede", "status"],
+        _ => &["status"],
+    };
+
+    let mut last_output = None;
+    for step in steps {
+        let mut cmd = Command::new(bin_path);
+        cmd.current_dir(work_dir);
+        match *step {
+            "download" => {
+                let _ = std::fs::create_dir_all(work_dir.join("dados-publicos-zip"));
+                cmd.args([
+                    "download",
+                    "--output-dir",
+                    "dados-publicos-zip",
+                    "--concurrency",
+                    "6",
+                ]);
+            }
+            "build-cnpj" => {
+                let _ = std::fs::create_dir_all(work_dir.join("dados-publicos"));
+                cmd.args([
+                    "build-cnpj",
+                    "--input-dir",
+                    "dados-publicos-zip",
+                    "--output-db",
+                    "dados-publicos/cnpj.db",
+                    "--memory-limit-mb",
+                    "8096",
+                    "--batch-size",
+                    "5000",
+                    "--threads",
+                    "12",
+                    "--drop-existing",
+                ]);
+            }
+            "build-rede" => {
+                let _ = std::fs::create_dir_all(work_dir.join("dados-publicos"));
+                cmd.args([
+                    "build-rede",
+                    "--cnpj-db",
+                    "dados-publicos/cnpj.db",
+                    "--output-rede",
+                    "dados-publicos/rede.db",
+                    "--output-search",
+                    "dados-publicos/rede_search.db",
+                    "--memory-limit-mb",
+                    "8096",
+                    "--drop-existing",
+                ]);
+            }
+            _ => {
+                cmd.args([
+                    "status",
+                    "--cnpj-db",
+                    "dados-publicos/cnpj.db",
+                    "--rede-db",
+                    "dados-publicos/rede.db",
+                    "--search-db",
+                    "dados-publicos/rede_search.db",
+                    "--zip-dir",
+                    "dados-publicos-zip",
+                ]);
+            }
+        }
+        let out = cmd.output().await?;
+        if !out.status.success() {
+            return Ok(out);
+        }
+        last_output = Some(out);
+    }
+
+    last_output.ok_or_else(|| std::io::Error::other("Nenhum passo executado"))
 }
 
 /// Verifica performance comparativa vs Python legado
@@ -451,5 +645,10 @@ mod tests {
         assert_eq!(resolve_make_target("all", false), Some("all"));
 
         assert_eq!(resolve_make_target("invalid", true), None);
+        assert_eq!(normalize_component_id("cnpj-download"), Some("download"));
+        assert_eq!(normalize_component_id("cnpj-build"), Some("build-cnpj"));
+        assert_eq!(normalize_component_id("cnpj-rede"), Some("build-rede"));
+        assert_eq!(normalize_component_id("cnpj-all"), Some("all"));
+        assert_eq!(normalize_component_id("invalid"), None);
     }
 }

@@ -90,20 +90,20 @@ Benchmarks de performance validados:
 
 ---
 
-## 5. Pipeline de Dados Abertos RFB CNPJ (`rfb-cnpj-etl`)
+## 5. Pipeline de Dados Abertos RFB CNPJ (`crates/rfb-cnpj-etl`)
 
-O módulo `crates/ecd-graph` consome bancos SQLite gerados pela ferramenta autônoma `rfb-cnpj-etl`, localizada em:
+O módulo `crates/ecd-graph` consome bancos SQLite gerados pela crate nativa `rfb-cnpj-etl`, integrada ao workspace em:
 
 ```
-/home/pizani/Documents/dados_abertos/rede-cnpj-master-v26/rede_cria_tabelas/
+crates/rfb-cnpj-etl/
 ```
 
-Essa ferramenta é independente do workspace Rust principal. Ela:
+Essa crate expõe tanto biblioteca (`rfb_cnpj_etl`) quanto binário CLI (`rfb-cnpj-etl`) e alvos no `Makefile` raiz (`make cnpj-download`, `make cnpj-build`, `make cnpj-rede`, `make cnpj-status`, `make cnpj-all`). Ela:
 - Baixa os dados abertos da RFB via HTTP 206 com crawler WebDAV (detecção automática do diretório mensal).
 - Gera `cnpj.db` (dados cadastrais, sócios, CNAEs, expansão PJ via `cnpj_base2matriz`) e `rede.db` (grafo + FTS5).
 - Opera com zero-disk durante a ingestão (descompressão streaming em memória).
 
-Não modifique nem faça consultas diretas nos arquivos `.db` dentro do workspace `rust-sped-analitycs`; consuma-os apenas via `crates/ecd-graph`.
+Não modifique nem faça consultas diretas nos arquivos `.db` manualmente; gere-os via `crates/rfb-cnpj-etl` e consuma-os apenas via `crates/ecd-graph`.
 
 ---
 

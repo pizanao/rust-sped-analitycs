@@ -111,9 +111,9 @@ class BrowserRunner:
                 page.wait_for_timeout(200)
             loc.click(timeout=self.action_timeout)
 
-        elif act_name in {"type", "fill"}:
+        elif act_name == "type":
             if not action.selector:
-                raise BrowserRunnerError(f"'{act_name}' action in '{parent_id}' missing 'selector'")
+                raise BrowserRunnerError(f"'type' action in '{parent_id}' missing 'selector'")
             text_val = action.text or ""
             loc = page.locator(action.selector).first
             loc.wait_for(state="visible", timeout=self.action_timeout)
@@ -124,6 +124,17 @@ class BrowserRunner:
             # Type with a natural human delay between keystrokes
             loc.fill("")
             loc.type(text_val, delay=40)
+
+        elif act_name == "fill":
+            if not action.selector:
+                raise BrowserRunnerError(f"'fill' action in '{parent_id}' missing 'selector'")
+            text_val = action.text if action.text is not None else (action.value or "")
+            loc = page.locator(action.selector).first
+            loc.wait_for(state="visible", timeout=self.action_timeout)
+            if action.highlight:
+                self._inject_highlight(page, action.selector)
+                page.wait_for_timeout(200)
+            loc.fill(str(text_val))
 
         elif act_name == "wait":
             sec = action.seconds or 1.0

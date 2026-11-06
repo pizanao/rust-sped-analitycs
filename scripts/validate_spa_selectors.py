@@ -64,10 +64,25 @@ def check(page, sel: str, mode: str) -> bool:
 
 def main() -> int:
     ap = argparse.ArgumentParser()
-    ap.add_argument("yaml_path")
+    ap.add_argument("yaml_path", nargs="?", default="demo_spa.yaml")
     ap.add_argument("--url", default="http://localhost:3000")
-    args = (ap.parse_args())
-    _ = yaml  # kept for future per-scene loading; page-level check used here
+    args = ap.parse_args()
+
+    yaml_file = Path(args.yaml_path)
+    yaml_selectors: list[tuple[str, str, str]] = []
+    if yaml_file.is_file():
+        data = yaml.safe_load(yaml_file.read_text(encoding="utf-8")) or {}
+        current_route = "/rfb-cnpj"
+        for scene in data.get("scenes", []):
+            scene_id = scene.get("id", "unknown")
+            for act in scene.get("actions", []):
+                if act.get("action") == "navigate" and act.get("url"):
+                    url_val = str(act["url"])
+                    if "://" in url_val:
+                        path_part = "/" + url_val.split("://", 1)[1].split("/", 1)[-1]
+                        current_route = path_part if path_part != "/" else "/rfb-cnpj"
+                elif act.get("selector"):
+                    yaml_selectors.append((current_route, scene_id, str(act["selector"])))
 
     failed = 0
     with sync_playwright() as p:
@@ -81,6 +96,20 @@ def main() -> int:
                 ok = check(page, sel, mode)
                 mark = "✅" if ok else "❌"
                 print(f"{mark} {route:16} {label:12}  {sel}")
+                if not ok:
+                    failed += 1
+
+        if yaml_selectors:
+            print(f"\nValidando {len(yaml_selectors)} seletores de {yaml_file.name}:")
+            last_route = None
+            for route, scene_id, sel in yaml_selectors:
+                if route != last_route:
+                    page.goto(f"{args.url}{route}", wait_until="networkidle", timeout=30_000)
+                    page.wait_for_timeout(1_000)
+                    last_route = route
+                ok = check(page, sel, "present")
+                mark = "✅" if ok else "❌"
+                print(f"{mark} {route:16} {scene_id:24}  {sel}")
                 if not ok:
                     failed += 1
 

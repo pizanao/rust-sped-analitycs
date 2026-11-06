@@ -16,7 +16,6 @@ import {
   Clock,
   Activity,
   Layers,
-  HardDrive,
   Timer,
   ArrowRight
 } from 'lucide-react';
@@ -37,51 +36,26 @@ interface PipelineStage {
   memoryUsage?: number;
 }
 
-interface PipelineMetrics {
-  totalFiles: number;
-  totalSize: number;
-  downloadedSize: number;
-  elapsedTime: number;
-  estimatedTimeRemaining: number;
-  averageSpeed: number;
-  peakSpeed: number;
-  memoryPeak: number;
-  cpuUsage: number;
-}
-
 interface ComparisonMetrics {
   rust: {
     duration: number;
     throughput: number;
-    memoryMb: number;
+    memoryGb: number;
+    rssMb: number;
   };
   python: {
     duration: number;
     throughput: number;
-    memoryMb: number;
+    memoryGb: number;
   };
   speedup: number;
   memoryReduction: number;
 }
 
-// const COLORS = {
-//   primary: '#3b82f6',
-//   success: '#10b981',
-//   warning: '#f59e0b',
-//   error: '#ef4444',
-//   accent: '#8b5cf6',
-//   gradient: {
-//     start: '#3b82f6',
-//     end: '#8b5cf6'
-//   }
-// };
-
-// const CHART_COLORS = ['#3b82f6', '#10b981', '#f59e0b', '#ef4444', '#8b5cf6', '#06b6d4'];
-
 const MOCK_SPEED_DATA = Array.from({ length: 20 }, (_, i) => ({
   time: `${i}s`,
-  speed: Math.floor(Math.random() * 50 + 80),
-  python: Math.floor(Math.random() * 20 + 30)
+  speed: 95 + ((i * 17) % 35),
+  python: 32 + ((i * 7) % 16)
 }));
 
 const MOCK_THROUGHPUT_DATA = [
@@ -108,37 +82,21 @@ export const PipelineDashboard: React.FC = () => {
     { id: 'fts', name: 'FTS5 Indexing', status: 'completed', progress: 100, duration: 45, itemsProcessed: 54800000, throughput: 420 }
   ]);
 
-  const metrics: PipelineMetrics = useMemo(() => ({
-    totalFiles: 47,
-    totalSize: 74.5,
-    downloadedSize: 74.5,
-    elapsedTime: 377,
-    estimatedTimeRemaining: 0,
-    averageSpeed: 197.6,
-    peakSpeed: 512,
-    memoryPeak: 4.2,
-    cpuUsage: 85
-  }), []);
-
   const comparison: ComparisonMetrics = useMemo(() => ({
     rust: {
       duration: 377,
       throughput: 197.6,
-      memoryMb: 4.2
+      memoryGb: 4.2,
+      rssMb: 110
     },
     python: {
       duration: 2840,
       throughput: 26.2,
-      memoryMb: 18.7
+      memoryGb: 18.7
     },
     speedup: 7.53,
     memoryReduction: 77.5
   }), []);
-
-  const formatBytes = (gb: number) => {
-    if (gb >= 1) return `${gb.toFixed(1)} GB`;
-    return `${(gb * 1024).toFixed(0)} MB`;
-  };
 
   const formatDuration = (seconds: number) => {
     const mins = Math.floor(seconds / 60);
@@ -173,96 +131,6 @@ export const PipelineDashboard: React.FC = () => {
 
   return (
     <div className="space-y-6">
-      {/* Hero Stats */}
-      <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-4">
-        <Card className="border-slate-200 bg-gradient-to-br from-blue-50 to-white">
-          <CardContent className="p-5">
-            <div className="flex items-center justify-between">
-              <div>
-                <p className="text-xs font-semibold text-slate-500 uppercase tracking-wide">Speedup vs Python</p>
-                <div className="flex items-baseline gap-2 mt-1">
-                  <span className="text-3xl font-extrabold text-blue-600">{comparison.speedup}x</span>
-                  <span className="text-sm font-medium text-emerald-600">faster</span>
-                </div>
-              </div>
-              <div className="h-12 w-12 rounded-xl bg-blue-100 text-blue-600 flex items-center justify-center">
-                <Zap className="h-6 w-6" />
-              </div>
-            </div>
-            <div className="mt-3 flex items-center gap-2 text-xs">
-              <Badge variant="outline" className="border-emerald-200 text-emerald-700">
-                {formatDuration(comparison.rust.duration)} vs {formatDuration(comparison.python.duration)}
-              </Badge>
-            </div>
-          </CardContent>
-        </Card>
-
-        <Card className="border-slate-200 bg-gradient-to-br from-emerald-50 to-white">
-          <CardContent className="p-5">
-            <div className="flex items-center justify-between">
-              <div>
-                <p className="text-xs font-semibold text-slate-500 uppercase tracking-wide">Memory Reduction</p>
-                <div className="flex items-baseline gap-2 mt-1">
-                  <span className="text-3xl font-extrabold text-emerald-600">{comparison.memoryReduction}%</span>
-                  <span className="text-sm font-medium text-slate-600">less RAM</span>
-                </div>
-              </div>
-              <div className="h-12 w-12 rounded-xl bg-emerald-100 text-emerald-600 flex items-center justify-center">
-                <HardDrive className="h-6 w-6" />
-              </div>
-            </div>
-            <div className="mt-3 flex items-center gap-2 text-xs">
-              <Badge variant="outline" className="border-slate-200 text-slate-600">
-                {comparison.rust.memoryMb} MB vs {comparison.python.memoryMb} MB
-              </Badge>
-            </div>
-          </CardContent>
-        </Card>
-
-        <Card className="border-slate-200 bg-gradient-to-br from-purple-50 to-white">
-          <CardContent className="p-5">
-            <div className="flex items-center justify-between">
-              <div>
-                <p className="text-xs font-semibold text-slate-500 uppercase tracking-wide">Throughput</p>
-                <div className="flex items-baseline gap-2 mt-1">
-                  <span className="text-3xl font-extrabold text-purple-600">{metrics.averageSpeed}</span>
-                  <span className="text-sm font-medium text-slate-600">MB/s avg</span>
-                </div>
-              </div>
-              <div className="h-12 w-12 rounded-xl bg-purple-100 text-purple-600 flex items-center justify-center">
-                <TrendingUp className="h-6 w-6" />
-              </div>
-            </div>
-            <div className="mt-3 flex items-center gap-2 text-xs">
-              <Badge variant="outline" className="border-slate-200 text-slate-600">
-                Peak: {metrics.peakSpeed} MB/s
-              </Badge>
-            </div>
-          </CardContent>
-        </Card>
-
-        <Card className="border-slate-200 bg-gradient-to-br from-amber-50 to-white">
-          <CardContent className="p-5">
-            <div className="flex items-center justify-between">
-              <div>
-                <p className="text-xs font-semibold text-slate-500 uppercase tracking-wide">Total Processed</p>
-                <div className="flex items-baseline gap-2 mt-1">
-                  <span className="text-3xl font-extrabold text-amber-600">{formatBytes(metrics.totalSize)}</span>
-                </div>
-              </div>
-              <div className="h-12 w-12 rounded-xl bg-amber-100 text-amber-600 flex items-center justify-center">
-                <Database className="h-6 w-6" />
-              </div>
-            </div>
-            <div className="mt-3 flex items-center gap-2 text-xs">
-              <Badge variant="outline" className="border-slate-200 text-slate-600">
-                {metrics.totalFiles} files
-              </Badge>
-            </div>
-          </CardContent>
-        </Card>
-      </div>
-
       {/* Pipeline Stages Timeline */}
       <Card className="border-slate-200">
         <CardHeader className="border-b border-slate-100">
@@ -281,7 +149,7 @@ export const PipelineDashboard: React.FC = () => {
             {stages.map((stage, index) => (
               <div
                 key={stage.id}
-                className={`flex items-center gap-4 p-4 rounded-lg border ${getStatusColor(stage.status)}`}
+                className={`relative flex items-center gap-4 p-4 rounded-lg border ${getStatusColor(stage.status)}`}
               >
                 <div className="flex items-center gap-3 flex-1">
                   {getStatusIcon(stage.status)}
@@ -545,8 +413,10 @@ export const PipelineDashboard: React.FC = () => {
                 </tr>
                 <tr className="hover:bg-slate-50">
                   <td className="py-3 px-4 text-slate-700">Peak Memory Usage</td>
-                  <td className="py-3 px-4 text-right font-mono font-semibold text-blue-600">{comparison.rust.memoryMb} MB</td>
-                  <td className="py-3 px-4 text-right font-mono text-amber-600">{comparison.python.memoryMb} MB</td>
+                  <td className="py-3 px-4 text-right font-mono font-semibold text-blue-600">
+                    {comparison.rust.memoryGb} GB (&lt; {comparison.rust.rssMb} MB RSS)
+                  </td>
+                  <td className="py-3 px-4 text-right font-mono text-amber-600">{comparison.python.memoryGb} GB</td>
                   <td className="py-3 px-4 text-right">
                     <Badge className="bg-emerald-100 text-emerald-700 border-emerald-200">
                       {comparison.memoryReduction}% reduction

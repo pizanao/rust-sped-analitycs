@@ -102,13 +102,35 @@ export const FTSSearchPanel: React.FC = () => {
   });
 
   const filteredResults = useMemo(() => {
+    const normalizeText = (val: string) =>
+      val
+        .normalize('NFD')
+        .replace(/[\u0300-\u036f]/g, '')
+        .toLowerCase();
+
+    const normalizedQuery = normalizeText(query.trim());
+
     return results.filter(r => {
       if (filters.tipo !== 'all' && r.type !== filters.tipo) return false;
       if (filters.situacao !== 'all' && r.situacao !== filters.situacao) return false;
       if (filters.uf && r.uf !== filters.uf) return false;
+      if (normalizedQuery) {
+        const searchable = [
+          r.razaoSocial,
+          r.nomeFantasia || '',
+          r.cnpj || '',
+          r.cpf || '',
+          r.cnae || '',
+          r.municipio || '',
+          ...r.highlights
+        ]
+          .map(normalizeText)
+          .join(' ');
+        if (!searchable.includes(normalizedQuery)) return false;
+      }
       return true;
     });
-  }, [results, filters]);
+  }, [results, filters, query]);
 
   const formatCurrency = (value: number) => {
     return new Intl.NumberFormat('pt-BR', {

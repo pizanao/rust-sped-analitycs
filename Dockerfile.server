@@ -2,7 +2,8 @@
 # Rust Sped Analytics - HTTP Server Dockerfile (Multi-stage Build)
 # ==============================================================================
 
-FROM rust:1.99-bookworm AS builder
+ARG RUST_IMAGE=rust:1.85-slim-bookworm
+FROM ${RUST_IMAGE} AS builder
 
 WORKDIR /usr/src/app
 
@@ -17,18 +18,21 @@ COPY crates ./crates
 COPY apps/server ./apps/server
 COPY apps/worker ./apps/worker
 
-RUN cargo build --release -p ecd-server
+RUN cargo build --release -p ecd-server -p rfb-cnpj-etl
 
-FROM rust:1.99-bookworm AS runtime
+FROM debian:bookworm-slim AS runtime
 
 WORKDIR /app
 
 RUN apt-get -o Acquire::Check-Valid-Until=false -o Acquire::Check-Date=false update && apt-get install -y --no-install-recommends \
     ca-certificates \
     curl \
+    make \
     && rm -rf /var/lib/apt/lists/*
 
 COPY --from=builder /usr/src/app/target/release/ecd-server /usr/local/bin/ecd-server
+COPY --from=builder /usr/src/app/target/release/rfb-cnpj-etl /usr/local/bin/rfb-cnpj-etl
+COPY Makefile /app/Makefile
 
 ENV PORT=8080
 EXPOSE 8080

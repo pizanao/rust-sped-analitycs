@@ -232,7 +232,8 @@ rust-sped-analitycs/
 │   ├── ecd-fiscal/                # Apuração DRE: partial_ratio, 24 termos, 12 filtros, XLSX
 │   ├── ecd-graph/                 # BFS 1-10 camadas, Dijkstra, sanções PEP/CEIS/CEPIM/CNEP/PGFN
 │   ├── ecd-analytics/             # Indicadores CNAE/Porte/Simples + cache moka TTL
-│   └── ecd-storage/               # Pool SQLx PostgreSQL + repositories isolados por trilha
+│   ├── ecd-storage/               # Pool SQLx PostgreSQL + repositories isolados por trilha
+│   └── rfb-cnpj-etl/              # Pipeline ETL RFB CNPJ (HTTP 206, streaming zip, cnpj.db/rede.db)
 ├── services/
 │   └── ai-gateway/                # Copiloto IA: FastAPI + LangGraph ReAct + ChartSpec JSON
 ├── scripts/
@@ -246,15 +247,15 @@ rust-sped-analitycs/
 
 ---
 
-## Pipeline de Dados Abertos RFB CNPJ (`rfb-cnpj-etl`)
+## Pipeline de Dados Abertos RFB CNPJ (`crates/rfb-cnpj-etl`)
 
-A inteligência societária do módulo `ecd-graph` depende de bases SQLite geradas por uma ferramenta autônoma em Rust localizada em:
+A inteligência societária do módulo `ecd-graph` depende de bases SQLite geradas pela crate nativa integrada ao workspace em:
 
 ```
-/home/pizani/Documents/dados_abertos/rede-cnpj-master-v26/rede_cria_tabelas/
+crates/rfb-cnpj-etl/
 ```
 
-Essa ferramenta (`rfb-cnpj-etl`) realiza:
+Expõe tanto biblioteca (`rfb_cnpj_etl`) quanto binário CLI (`rfb-cnpj-etl`) e alvos no `Makefile` raiz (`make cnpj-download`, `make cnpj-build`, `make cnpj-rede`, `make cnpj-status`, `make cnpj-all`). Essa ferramenta realiza:
 - **Download resumível HTTP 206** com crawler WebDAV para detectar o diretório mensal mais recente dos dados abertos da RFB.
 - **Descompressão streaming zero-disk** de arquivos `.zip` diretamente em memória (sem extrair GBs de CSV para disco).
 - **Geração de `cnpj.db`**: 12 tabelas SQLite com 18 índices — dados cadastrais, estabelecimentos, sócios, CNAEs, expansão de sócios PJ via `cnpj_base2matriz`.

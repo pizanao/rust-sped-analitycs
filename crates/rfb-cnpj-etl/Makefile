@@ -12,7 +12,7 @@ SHELL          := /bin/bash
 # ------------------------------------------------------------------------------
 # Version & Toolchain Configuration
 # ------------------------------------------------------------------------------
-VERSION        ?= $(shell grep -m1 '^version = ' Cargo.toml 2>/dev/null | cut -d '"' -f 2 || echo "0.1.0")
+VERSION        ?= $(shell grep -m1 '^version = ' Cargo.toml ../../Cargo.toml 2>/dev/null | head -n1 | cut -d '"' -f 2 || echo "0.1.0")
 CARGO          ?= cargo
 PROFILE        ?= release
 

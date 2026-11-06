@@ -12,6 +12,12 @@ STAGE_DIR      := media/ecd_stage
 DIST_DIR       := dist
 
 # Variáveis do Pipeline RFB CNPJ ETL
+PROFILE        ?= release
+ifeq ($(PROFILE),release)
+  CARGO_PROFILE_FLAG := --release
+else
+  CARGO_PROFILE_FLAG :=
+endif
 CNPJ_ZIP_DIR   ?= dados-publicos-zip
 CNPJ_DATA_DIR  ?= dados-publicos
 CNPJ_DB        ?= $(CNPJ_DATA_DIR)/cnpj.db
@@ -240,13 +246,13 @@ cnpj-all: ## Executa o pipeline completo do RFB CNPJ ETL
 
 cnpj-download: ## Baixa os 37 arquivos compactados (.zip) da RFB com HTTP 206 resume
 	@mkdir -p $(CNPJ_ZIP_DIR)
-	@cargo run --release -p rfb-cnpj-etl --bin rfb-cnpj-etl -- download \
+	@cargo run $(CARGO_PROFILE_FLAG) -p rfb-cnpj-etl --bin rfb-cnpj-etl -- download \
 		--output-dir $(CNPJ_ZIP_DIR) \
 		--concurrency $(CNPJ_CONC)
 
 cnpj-build: ## Realiza a carga streaming dos 37 zips no banco SQLite cnpj.db
 	@mkdir -p $(dir $(CNPJ_DB))
-	@cargo run --release -p rfb-cnpj-etl --bin rfb-cnpj-etl -- build-cnpj \
+	@cargo run $(CARGO_PROFILE_FLAG) -p rfb-cnpj-etl --bin rfb-cnpj-etl -- build-cnpj \
 		--input-dir $(CNPJ_ZIP_DIR) \
 		--output-db $(CNPJ_DB) \
 		--memory-limit-mb $(CNPJ_MEM_LIMIT) \
@@ -256,7 +262,7 @@ cnpj-build: ## Realiza a carga streaming dos 37 zips no banco SQLite cnpj.db
 
 cnpj-rede: ## Gera a base de grafo societário (rede.db) e busca FTS5 (rede_search.db)
 	@mkdir -p $(dir $(REDE_DB)) $(dir $(SEARCH_DB))
-	@cargo run --release -p rfb-cnpj-etl --bin rfb-cnpj-etl -- build-rede \
+	@cargo run $(CARGO_PROFILE_FLAG) -p rfb-cnpj-etl --bin rfb-cnpj-etl -- build-rede \
 		--cnpj-db $(CNPJ_DB) \
 		--output-rede $(REDE_DB) \
 		--output-search $(SEARCH_DB) \
@@ -264,7 +270,7 @@ cnpj-rede: ## Gera a base de grafo societário (rede.db) e busca FTS5 (rede_sear
 		--drop-existing
 
 cnpj-status: ## Exibe contagem de registros, tamanhos e integridade dos bancos gerados
-	@cargo run --release -p rfb-cnpj-etl --bin rfb-cnpj-etl -- status \
+	@cargo run $(CARGO_PROFILE_FLAG) -p rfb-cnpj-etl --bin rfb-cnpj-etl -- status \
 		--cnpj-db $(CNPJ_DB) \
 		--rede-db $(REDE_DB) \
 		--search-db $(SEARCH_DB) \

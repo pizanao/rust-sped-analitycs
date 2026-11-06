@@ -23,7 +23,7 @@ Trazer o motor Rust de ETL de Dados Abertos do CNPJ da Receita Federal (`rfb-cnp
 
 ## 3. Restrições (Constraints)
 - **Unificação de Features no Workspace:**
-  - `rusqlite = "0.32"` no workspace deve passar a incluir `features = ["bundled-full", "backup", "blob"]` (necessário para FTS5 `unicode61` no `rfb-cnpj-etl` e totalmente compatível com `ecd-graph`).
+  - `rusqlite = "0.32"` no workspace deve passar a incluir `features = ["bundled", "backup", "blob"]` (`bundled` já habilita `SQLITE_ENABLE_FTS5` e `unicode61` no `rfb-cnpj-etl` sem ativar `extra_check` de `bundled-full`, preservando compatibilidade com os PRAGMAs de `r2d2_sqlite` em `ecd-graph`).
   - `reqwest = "0.12"` no workspace deve incluir a feature `"cookies"` exigida pelo crawler WebDAV da RFB.
 - **Docker Build Context:** `Dockerfile.server` e `Dockerfile.worker` já copiam `COPY crates ./crates`, portanto alojar o pacote em `crates/rfb-cnpj-etl` mantém os builds Docker funcionando sem camadas extras.
 

@@ -250,6 +250,7 @@ export const NetworkGraphViewer: React.FC = () => {
             <Button
               variant="outline"
               size="sm"
+              title="Afastar Zoom"
               onClick={() => setZoom(Math.max(0.5, zoom - 0.1))}
               disabled={zoom <= 0.5}
             >
@@ -258,6 +259,7 @@ export const NetworkGraphViewer: React.FC = () => {
             <Button
               variant="outline"
               size="sm"
+              title="Aproximar Zoom"
               onClick={() => setZoom(Math.min(2, zoom + 0.1))}
               disabled={zoom >= 2}
             >
@@ -266,6 +268,7 @@ export const NetworkGraphViewer: React.FC = () => {
             <Button
               variant="outline"
               size="sm"
+              title="Enquadrar Visualização"
               onClick={() => setZoom(1)}
             >
               <Maximize2 className="h-3 w-3" />

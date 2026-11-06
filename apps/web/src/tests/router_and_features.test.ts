@@ -13,9 +13,10 @@ import type {
   ChartSpec,
 } from '../types/index.ts';
 
-test('router TanStack deve registrar as 5 rotas obrigatórias da aplicação', () => {
+test('router TanStack deve registrar as rotas obrigatórias da aplicação (incluindo /rfb-cnpj)', () => {
   const rootRoute = createRootRoute();
   const indexRoute = createRoute({ getParentRoute: () => rootRoute, path: '/' });
+  const rfbCnpjRoute = createRoute({ getParentRoute: () => rootRoute, path: '/rfb-cnpj' });
   const ingestaoRoute = createRoute({ getParentRoute: () => rootRoute, path: '/ingestao' });
   const fiscalRoute = createRoute({ getParentRoute: () => rootRoute, path: '/fiscal' });
   const grcRoute = createRoute({ getParentRoute: () => rootRoute, path: '/grc' });
@@ -24,6 +25,7 @@ test('router TanStack deve registrar as 5 rotas obrigatórias da aplicação', (
   const testRouter = createRouter({
     routeTree: rootRoute.addChildren([
       indexRoute,
+      rfbCnpjRoute,
       ingestaoRoute,
       fiscalRoute,
       grcRoute,
@@ -33,6 +35,7 @@ test('router TanStack deve registrar as 5 rotas obrigatórias da aplicação', (
 
   const routes = testRouter.routesByPath;
   assert.ok(routes['/'], 'Rota raiz "/" deve estar registrada');
+  assert.ok(routes['/rfb-cnpj'], 'Rota "/rfb-cnpj" deve estar registrada');
   assert.ok(routes['/ingestao'], 'Rota "/ingestao" deve estar registrada');
   assert.ok(routes['/fiscal'], 'Rota "/fiscal" deve estar registrada');
   assert.ok(routes['/grc'], 'Rota "/grc" deve estar registrada');
