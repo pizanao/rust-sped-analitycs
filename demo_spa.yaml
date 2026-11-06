@@ -1,0 +1,434 @@
+title: "Rust Sped Analytics — Demonstração Funcional da SPA"
+description: "22 cenas cobrindo as 5 abas da aplicação: Pipeline RFB CNPJ, Ingestão SPED, Auditoria Fiscal, Rede Societária GRC e Indicadores + Copilot de IA."
+
+config:
+  viewport:
+    width: 1920
+    height: 1080
+  fps: 25
+  voice_id: "bf91cd6a"
+  model: "omnivoice"
+  base_url: "http://localhost:3900"
+  output_dir: "output"
+  temp_dir: ".temp_demo"
+
+scenes:
+  # ── Aba 1: Pipeline RFB CNPJ ─────────────────────────────────────────────
+
+  - id: "cena_01_abertura"
+    title: "Abertura — Hero Cards"
+    narration: |
+      Olá pessoal! Bem-vindos ao Rust Sped Analytics.
+      Aqui no painel do Pipeline RFB CNPJ, vejam as métricas.
+      Sete vírgula cinco três vezes mais rápido que o Python legado.
+      Setenta e sete por cento menos RAM.
+      Cinquenta e quatro milhões e oitocentos mil registros processados.
+      Throughput médio de cento e noventa e sete megabytes por segundo.
+    pause_after: 1.0
+    actions:
+      - action: navigate
+        url: "http://localhost:3000/rfb-cnpj"
+        highlight: false
+      - action: wait
+        seconds: 1.5
+
+  - id: "cena_02_timeline"
+    title: "Timeline do Pipeline Zero-Copy"
+    narration: |
+      A timeline mostra os cinco estágios em sequência.
+      Download HTTP dois zero seis resumível em quarenta e cinco segundos.
+      Descompressão streaming zero-copy em doze segundos.
+      Parse CSV multithread com Rayon em três minutos.
+      Construção do grafo societário em noventa e cinco segundos.
+      Indexação FTS cinco em quarenta e cinco segundos.
+      Tudo sem escrever CSVs intermediários em disco.
+    pause_after: 1.0
+    actions:
+      - action: hover
+        selector: "text=Pipeline Stages"
+        highlight: true
+      - action: wait
+        seconds: 1.0
+
+  - id: "cena_03_graficos"
+    title: "Gráficos Recharts — Rust vs Python"
+    narration: |
+      Nos gráficos, a área azul é o Rust, a amarela é o Python legado.
+      O Rust mantém throughput estável e alto durante todo o processamento.
+      No gráfico de barras, o estágio de parse CSV mostra oitocentos e noventa megabytes por segundo contra cento e vinte do Python.
+    pause_after: 1.0
+    actions:
+      - action: hover
+        selector: "text=Processing Speed"
+        highlight: true
+      - action: wait
+        seconds: 1.0
+
+  - id: "cena_04_filtro_grafo"
+    title: "Filtro do Grafo Societário"
+    narration: |
+      O grafo societário tem filtros por tipo de entidade.
+      Vou ciclar: empresas, sócios, sanções, e voltar a todos.
+    pause_after: 0.8
+    actions:
+      - action: click
+        selector: 'button:has-text("Todos")'
+        highlight: true
+      - action: wait
+        seconds: 0.4
+      - action: click
+        selector: 'button:has-text("Empresas")'
+        highlight: true
+      - action: wait
+        seconds: 0.4
+      - action: click
+        selector: 'button:has-text("Sócios")'
+        highlight: true
+      - action: wait
+        seconds: 0.4
+      - action: click
+        selector: 'button:has-text("Sanções")'
+        highlight: true
+      - action: wait
+        seconds: 0.4
+      - action: click
+        selector: 'button:has-text("Todos")'
+        highlight: true
+
+  - id: "cena_05_zoom_grafo"
+    title: "Zoom e Enquadramento do Grafo"
+    narration: |
+      Posso aproximar, afastar e enquadrar o grafo com os controles flutuantes.
+    pause_after: 0.8
+    actions:
+      - action: click
+        selector: 'button[title="Aproximar Zoom"]'
+        highlight: true
+      - action: wait
+        seconds: 0.3
+      - action: click
+        selector: 'button[title="Afastar Zoom"]'
+        highlight: true
+      - action: wait
+        seconds: 0.3
+      - action: click
+        selector: 'button[title="Enquadrar Visualização"]'
+        highlight: true
+
+  - id: "cena_06_fts5_search"
+    title: "Busca Full-Text FTS5"
+    narration: |
+      A busca FTS5 usa tokenizer Unicode sessenta e um com remoção de diacríticos.
+      Busco por Petrobras, filtro por empresa ativa no Rio de Janeiro.
+    pause_after: 0.8
+    actions:
+      - action: type
+        selector: 'input[placeholder^="Search by"]'
+        text: "Petrobras"
+        highlight: true
+      - action: press
+        key: "Enter"
+      - action: wait
+        seconds: 0.5
+      - action: select
+        selector: "select"
+        value: "empresa"
+        highlight: true
+      - action: wait
+        seconds: 0.5
+      - action: type
+        selector: 'input[maxlength="2"]'
+        text: "RJ"
+        highlight: true
+      - action: wait
+        seconds: 0.5
+      - action: click
+        selector: 'button:has-text("Clear")'
+        highlight: true
+
+  - id: "cena_07_makefile"
+    title: "MakefileController — Execução de Targets"
+    narration: |
+      O MakefileController tem targets não interativos.
+      Seleciono o parse CSV, executo, e depois disparo o pipeline completo.
+    pause_after: 0.8
+    actions:
+      - action: click
+        selector: 'text=parse-csv-stream'
+        highlight: true
+      - action: wait
+        seconds: 0.3
+      - action: click
+        selector: 'button:has-text("Run Selected Target")'
+        highlight: true
+      - action: wait
+        seconds: 1.5
+      - action: click
+        selector: 'button:has-text("Run All Pipeline")'
+        highlight: true
+      - action: wait
+        seconds: 1.5
+      - action: click
+        selector: 'button:has-text("Clear")'
+        highlight: true
+
+  - id: "cena_08_fim_aba1"
+    title: "Fim da Aba RFB CNPJ"
+    narration: |
+      Isso conclui o painel do Pipeline RFB CNPJ.
+      Vamos agora para a aba de Ingestão.
+    pause_after: 0.8
+    actions:
+      - action: wait
+        seconds: 1.0
+
+  # ── Aba 2: Ingestão SPED ─────────────────────────────────────────────────
+
+  - id: "cena_09_ingestao_kpis"
+    title: "Ingestão — KPIs e Dropzone"
+    narration: |
+      Na aba de Ingestão vemos os KPIs: arquivos importados, tempo médio de parsing e o worker Redis ativo.
+      A dropzone aceita arquivos SPED ECD em TXT ou ZIP.
+    pause_after: 0.8
+    actions:
+      - action: navigate
+        url: "http://localhost:3000/ingestao"
+        highlight: false
+      - action: wait
+        seconds: 1.5
+
+  - id: "cena_10_upload_fixture"
+    title: "Upload do Fixture SPED"
+    narration: |
+      Vou enviar um arquivo SPED ECD de demonstração.
+      O upload é multipart streaming direto para o worker assíncrono via fila Redis.
+    pause_after: 1.0
+    actions:
+      - action: hover
+        selector: "text=Nova Ingestão"
+        highlight: true
+      - action: wait
+        seconds: 0.5
+
+  - id: "cena_11_tabela_logs"
+    title: "Tabela de Jobs e Logs SSE"
+    narration: |
+      A tabela mostra o histórico de importações.
+      Filtro por SPED e abro os logs ao vivo, que chegam via Server-Sent Events.
+    pause_after: 1.0
+    actions:
+      - action: type
+        selector: 'input[placeholder^="Buscar por arquivo"]'
+        text: "SPED"
+        highlight: true
+      - action: wait
+        seconds: 0.5
+      - action: click
+        selector: 'button:has-text("Logs")'
+        highlight: true
+      - action: wait
+        seconds: 2.0
+
+  # ── Aba 3: Auditoria Fiscal ───────────────────────────────────────────────
+
+  - id: "cena_12_fiscal_dre"
+    title: "Auditoria Fiscal — DRE Petrobras"
+    narration: |
+      Na Auditoria Fiscal digito o CNPJ da Petrobras.
+      A DRE apurada mostra Receita Bruta de quarenta e oito vírgula dois milhões, Receita de Serviços de trinta e cinco milhões e Outras Receitas de treze milhões.
+    pause_after: 1.0
+    actions:
+      - action: navigate
+        url: "http://localhost:3000/fiscal"
+        highlight: false
+      - action: wait
+        seconds: 1.0
+      - action: type
+        selector: 'input[placeholder^="Digite o CNPJ"]'
+        text: "33000167000101"
+        highlight: true
+      - action: press
+        key: "Enter"
+      - action: wait
+        seconds: 1.5
+
+  - id: "cena_13_exportar_xlsx"
+    title: "Exportação XLSX"
+    narration: |
+      Com um clique exporto a DRE apurada para Excel com o motor nativo umya-spreadsheet.
+    pause_after: 0.8
+    actions:
+      - action: click
+        selector: 'button:has-text("Exportar")'
+        highlight: true
+      - action: wait
+        seconds: 1.0
+
+  - id: "cena_14_sped_tabs"
+    title: "Blocos SPED — J150, J100, I155, 0000"
+    narration: |
+      As tabs mostram os quatro blocos oficiais do SPED ECD.
+      J cento e cinquenta com a DRE. J cem com o balancete. I cento e cinquenta e cinco com os lançamentos. E o bloco zero zero zero zero com o cabeçalho.
+    pause_after: 0.8
+    actions:
+      - action: click
+        selector: '[role="tab"]:has-text("J150")'
+        highlight: true
+      - action: wait
+        seconds: 0.4
+      - action: click
+        selector: '[role="tab"]:has-text("J100")'
+        highlight: true
+      - action: wait
+        seconds: 0.4
+      - action: click
+        selector: '[role="tab"]:has-text("I155")'
+        highlight: true
+      - action: wait
+        seconds: 0.4
+      - action: click
+        selector: '[role="tab"]:has-text("0000")'
+        highlight: true
+      - action: wait
+        seconds: 0.4
+      - action: type
+        selector: 'input[placeholder^="Filtrar nesta tabela"]'
+        text: "CNPJ"
+        highlight: true
+
+  # ── Aba 4: Rede Societária GRC ────────────────────────────────────────────
+
+  - id: "cena_15_grc_expandir"
+    title: "Rede Societária — Expandir Grafo"
+    narration: |
+      Na Rede Societária digito o CNPJ da Petrobras e expando o grafo.
+      O algoritmo BFS busca os vínculos societários em tempo real.
+    pause_after: 1.0
+    actions:
+      - action: navigate
+        url: "http://localhost:3000/grc"
+        highlight: false
+      - action: wait
+        seconds: 1.0
+      - action: type
+        selector: 'input[placeholder^="CNPJ ou CPF"]'
+        text: "33000167000101"
+        highlight: true
+      - action: click
+        selector: 'button:has-text("Expandir Grafo")'
+        highlight: true
+      - action: wait
+        seconds: 2.0
+
+  - id: "cena_16_slider_bfs"
+    title: "Slider BFS — 1 a 10 Camadas"
+    narration: |
+      O slider controla as camadas do BFS de um a dez.
+      Defino cinco camadas para uma análise mais profunda do grupo econômico.
+    pause_after: 0.8
+    actions:
+      - action: fill
+        selector: 'input[type="range"]'
+        text: "5"
+        highlight: true
+      - action: wait
+        seconds: 1.0
+
+  - id: "cena_17_menor_caminho"
+    title: "Menor Caminho — Dijkstra"
+    narration: |
+      O modo Menor Caminho usa Dijkstra para encontrar a conexão mais curta entre duas entidades.
+    pause_after: 0.8
+    actions:
+      - action: click
+        selector: 'button:has-text("Menor Caminho")'
+        highlight: true
+      - action: wait
+        seconds: 1.5
+
+  - id: "cena_18_drawer_no"
+    title: "Drawer de Nó — Expansão BFS +1"
+    narration: |
+      Ao clicar num nó, o drawer lateral exibe os detalhes da entidade.
+      Posso expandir um nível adicional ou buscar o menor caminho a partir daqui.
+    pause_after: 0.8
+    actions:
+      - action: wait
+        seconds: 1.0
+
+  # ── Aba 5: Indicadores + Copilot ─────────────────────────────────────────
+
+  - id: "cena_19_indicadores"
+    title: "Indicadores Econômicos — Filtro por UF"
+    narration: |
+      Os indicadores mostram distribuição por CNAE, porte empresarial e regime tributário.
+      Filtro por São Paulo e atualizo os dados.
+    pause_after: 0.8
+    actions:
+      - action: navigate
+        url: "http://localhost:3000/indicadores"
+        highlight: false
+      - action: wait
+        seconds: 1.5
+      - action: select
+        selector: "select"
+        value: "SP"
+        highlight: true
+      - action: wait
+        seconds: 0.5
+      - action: click
+        selector: 'button:has-text("Atualizar")'
+        highlight: true
+      - action: wait
+        seconds: 1.0
+
+  - id: "cena_20_copilot_pergunta"
+    title: "Copiloto de IA — Pergunta Fiscal"
+    narration: |
+      O Copiloto de IA permite consultas em linguagem natural.
+      Vou perguntar sobre a receita de serviços da Petrobras em dois mil e vinte e três.
+    pause_after: 1.0
+    actions:
+      - action: click
+        selector: 'button:has(svg.lucide-bot), button:has-text("Copiloto de IA")'
+        highlight: true
+      - action: wait
+        seconds: 1.0
+      - action: type
+        selector: 'input[placeholder^="Faça uma pergunta"]'
+        text: "Qual a receita de serviços da Petrobras em 2023?"
+        highlight: true
+      - action: press
+        key: "Enter"
+      - action: wait
+        seconds: 3.0
+
+  - id: "cena_21_sugestoes_copilot"
+    title: "Sugestões Rápidas do Copilot"
+    narration: |
+      O Copiloto também oferece sugestões de análise rápida.
+      Disparo a apuração de DRE com geração de gráfico.
+    pause_after: 0.8
+    actions:
+      - action: click
+        selector: 'button:has-text("Apurar DRE")'
+        highlight: true
+      - action: wait
+        seconds: 2.0
+
+  # ── Encerramento ──────────────────────────────────────────────────────────
+
+  - id: "cena_22_encerramento"
+    title: "Encerramento"
+    narration: |
+      E é isso, Rust Sped Analytics.
+      Pipeline RFB CNPJ, auditoria fiscal SPED, grafos societários GRC e inteligência setorial.
+      Tudo em Rust nativo, testado e verificado.
+      Muito obrigado por assistir!
+    pause_after: 1.5
+    actions:
+      - action: navigate
+        url: "http://localhost:3000/rfb-cnpj"
+        highlight: false
+      - action: wait
+        seconds: 1.5

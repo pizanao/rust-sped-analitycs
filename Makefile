@@ -11,6 +11,23 @@ DOCKER_COMPOSE ?= docker compose
 STAGE_DIR      := media/ecd_stage
 DIST_DIR       := dist
 
+# Variáveis do Pipeline RFB CNPJ ETL
+PROFILE        ?= release
+ifeq ($(PROFILE),release)
+  CARGO_PROFILE_FLAG := --release
+else
+  CARGO_PROFILE_FLAG :=
+endif
+CNPJ_ZIP_DIR   ?= dados-publicos-zip
+CNPJ_DATA_DIR  ?= dados-publicos
+CNPJ_DB        ?= $(CNPJ_DATA_DIR)/cnpj.db
+REDE_DB        ?= $(CNPJ_DATA_DIR)/rede.db
+SEARCH_DB      ?= $(CNPJ_DATA_DIR)/rede_search.db
+CNPJ_MEM_LIMIT ?= 8096
+CNPJ_BATCH     ?= 5000
+CNPJ_THREADS   ?= 12
+CNPJ_CONC      ?= 6
+
 # Paleta de cores para o terminal
 BLUE   := \033[1;34m
 GREEN  := \033[1;32m
@@ -99,7 +116,7 @@ logs-db: ## Acompanha os logs do PostgreSQL e Redis
 # ==============================================================================
 # BUILD (DOCKER & NATIVO)
 # ==============================================================================
-.PHONY: build build-native build-server build-worker build-web build-server-image build-worker-image build-web-image build-ai-image
+.PHONY: build build-native build-server build-worker build-etl build-web build-server-image build-worker-image build-web-image build-ai-image
 
 build: ## Constrói as imagens Docker de todos os serviços
 	@echo -e "${GREEN}Construindo imagens Docker via Docker Compose...${RESET}"
@@ -117,7 +134,9 @@ build-web-image: ## Constrói apenas a imagem Docker do frontend web
 build-ai-image: ## Constrói apenas a imagem Docker do AI Gateway
 	@$(DOCKER_COMPOSE) build ai-gateway
 
-build-native: build-server build-worker ## Compila binários Rust nativos (--release) e frontend
+build-native: ## Compila binários Rust nativos (--release) e frontend
+	@echo -e "${CYAN}Compilando binários nativos (ecd-server, ecd-worker, rfb-cnpj-etl) em --release...${RESET}"
+	@cargo build --release -p ecd-server -p ecd-worker -p rfb-cnpj-etl
 	@if command -v npm >/dev/null 2>&1 && [ -d apps/web ]; then \
 		echo -e "${CYAN}Compilando frontend SPA estático...${RESET}"; \
 		(cd apps/web && npm run build); \
@@ -131,6 +150,10 @@ build-server: ## Compila o binário Rust nativo do servidor Axum em modo --relea
 build-worker: ## Compila o binário Rust nativo do worker em modo --release
 	@echo -e "${CYAN}Compilando ecd-worker (--release)...${RESET}"
 	@cargo build --release -p ecd-worker
+
+build-etl: ## Compila o binário Rust nativo do rfb-cnpj-etl em modo --release
+	@echo -e "${CYAN}Compilando rfb-cnpj-etl (--release)...${RESET}"
+	@cargo build --release -p rfb-cnpj-etl
 
 build-web: ## Instala dependências e compila o frontend web estático
 	@echo -e "${CYAN}Instalando e compilando apps/web...${RESET}"
@@ -208,3 +231,47 @@ redis-cli: ## Abre sessão redis-cli interativa dentro do container Redis
 
 generate-mock: ## Gera arquivos SPED sintéticos de teste via scripts/gerar_massa_sped.py
 	@python3 scripts/gerar_massa_sped.py
+
+# ==============================================================================
+# PIPELINE RFB CNPJ ETL (DADOS ABERTOS)
+# ==============================================================================
+.PHONY: cnpj-all cnpj-download cnpj-build cnpj-rede cnpj-status
+.NOTPARALLEL: cnpj-all cnpj-download cnpj-build cnpj-rede cnpj-status
+
+cnpj-all: ## Executa o pipeline completo do RFB CNPJ ETL
+	@$(MAKE) cnpj-download
+	@$(MAKE) cnpj-build
+	@$(MAKE) cnpj-rede
+	@$(MAKE) cnpj-status
+
+cnpj-download: ## Baixa os 37 arquivos compactados (.zip) da RFB com HTTP 206 resume
+	@mkdir -p $(CNPJ_ZIP_DIR)
+	@cargo run $(CARGO_PROFILE_FLAG) -p rfb-cnpj-etl --bin rfb-cnpj-etl -- download \
+		--output-dir $(CNPJ_ZIP_DIR) \
+		--concurrency $(CNPJ_CONC)
+
+cnpj-build: ## Realiza a carga streaming dos 37 zips no banco SQLite cnpj.db
+	@mkdir -p $(dir $(CNPJ_DB))
+	@cargo run $(CARGO_PROFILE_FLAG) -p rfb-cnpj-etl --bin rfb-cnpj-etl -- build-cnpj \
+		--input-dir $(CNPJ_ZIP_DIR) \
+		--output-db $(CNPJ_DB) \
+		--memory-limit-mb $(CNPJ_MEM_LIMIT) \
+		--batch-size $(CNPJ_BATCH) \
+		--threads $(CNPJ_THREADS) \
+		--drop-existing
+
+cnpj-rede: ## Gera a base de grafo societário (rede.db) e busca FTS5 (rede_search.db)
+	@mkdir -p $(dir $(REDE_DB)) $(dir $(SEARCH_DB))
+	@cargo run $(CARGO_PROFILE_FLAG) -p rfb-cnpj-etl --bin rfb-cnpj-etl -- build-rede \
+		--cnpj-db $(CNPJ_DB) \
+		--output-rede $(REDE_DB) \
+		--output-search $(SEARCH_DB) \
+		--memory-limit-mb $(CNPJ_MEM_LIMIT) \
+		--drop-existing
+
+cnpj-status: ## Exibe contagem de registros, tamanhos e integridade dos bancos gerados
+	@cargo run $(CARGO_PROFILE_FLAG) -p rfb-cnpj-etl --bin rfb-cnpj-etl -- status \
+		--cnpj-db $(CNPJ_DB) \
+		--rede-db $(REDE_DB) \
+		--search-db $(SEARCH_DB) \
+		--zip-dir $(CNPJ_ZIP_DIR)

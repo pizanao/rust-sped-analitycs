@@ -1,0 +1,541 @@
+<!DOCTYPE html>
+<html lang="pt-BR">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>VoiceStudio Web Demo - Painel Administrativo</title>
+  <style>
+    :root {
+      --bg-primary: #0f172a;
+      --bg-secondary: #1e293b;
+      --bg-card: #334155;
+      --text-main: #f8fafc;
+      --text-muted: #94a3b8;
+      --accent: #3b82f6;
+      --accent-hover: #2563eb;
+      --success: #10b981;
+      --warning: #f59e0b;
+      --border: #475569;
+    }
+
+    * {
+      box-sizing: border-box;
+      margin: 0;
+      padding: 0;
+    }
+
+    body {
+      font-family: -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, Helvetica, Arial, sans-serif;
+      background-color: var(--bg-primary);
+      color: var(--text-main);
+      min-height: 100vh;
+      display: flex;
+      flex-direction: column;
+    }
+
+    /* Navbar */
+    .navbar {
+      background-color: var(--bg-secondary);
+      border-bottom: 1px solid var(--border);
+      padding: 1rem 2rem;
+      display: flex;
+      justify-content: space-between;
+      align-items: center;
+      position: sticky;
+      top: 0;
+      z-index: 100;
+    }
+
+    .brand {
+      display: flex;
+      align-items: center;
+      gap: 0.75rem;
+      font-size: 1.25rem;
+      font-weight: 700;
+      color: var(--accent);
+    }
+
+    .brand-icon {
+      width: 28px;
+      height: 28px;
+      background: var(--accent);
+      border-radius: 6px;
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      color: white;
+      font-weight: bold;
+    }
+
+    .nav-links {
+      display: flex;
+      gap: 1.5rem;
+      align-items: center;
+    }
+
+    .nav-link {
+      color: var(--text-muted);
+      text-decoration: none;
+      font-size: 0.95rem;
+      transition: color 0.2s;
+    }
+
+    .nav-link:hover, .nav-link.active {
+      color: var(--text-main);
+    }
+
+    /* Status Badge in Nav */
+    .badge {
+      display: inline-flex;
+      align-items: center;
+      gap: 0.5rem;
+      padding: 0.35rem 0.75rem;
+      border-radius: 9999px;
+      font-size: 0.85rem;
+      font-weight: 500;
+      background: rgba(16, 185, 129, 0.15);
+      color: var(--success);
+      border: 1px solid rgba(16, 185, 129, 0.3);
+      transition: all 0.3s ease;
+    }
+
+    .badge-dot {
+      width: 8px;
+      height: 8px;
+      border-radius: 50%;
+      background: currentColor;
+    }
+
+    /* Main Container */
+    .container {
+      max-width: 1400px;
+      width: 100%;
+      margin: 0 auto;
+      padding: 2.5rem 2rem;
+      flex: 1;
+    }
+
+    /* Hero Section */
+    .hero {
+      margin-bottom: 2.5rem;
+    }
+
+    .hero h1 {
+      font-size: 2.5rem;
+      font-weight: 800;
+      margin-bottom: 0.5rem;
+      letter-spacing: -0.025em;
+    }
+
+    .hero p {
+      color: var(--text-muted);
+      font-size: 1.15rem;
+    }
+
+    /* Status Banner */
+    #status-banner {
+      display: none;
+      background: rgba(59, 130, 246, 0.15);
+      border: 1px solid var(--accent);
+      color: #93c5fd;
+      padding: 1rem 1.5rem;
+      border-radius: 8px;
+      margin-bottom: 2rem;
+      font-size: 1rem;
+      display: flex;
+      align-items: center;
+      justify-content: space-between;
+      transition: opacity 0.3s;
+    }
+
+    /* Control Toolbar */
+    .toolbar {
+      background-color: var(--bg-secondary);
+      border: 1px solid var(--border);
+      border-radius: 12px;
+      padding: 1.5rem;
+      margin-bottom: 2rem;
+      display: flex;
+      flex-wrap: wrap;
+      gap: 1rem;
+      align-items: center;
+      justify-content: space-between;
+    }
+
+    .search-group {
+      display: flex;
+      gap: 0.75rem;
+      flex: 1;
+      max-width: 600px;
+    }
+
+    input[name='search'] {
+      flex: 1;
+      background-color: var(--bg-card);
+      border: 1px solid var(--border);
+      border-radius: 8px;
+      padding: 0.75rem 1rem;
+      color: var(--text-main);
+      font-size: 1rem;
+      outline: none;
+      transition: border-color 0.2s, box-shadow 0.2s;
+    }
+
+    input[name='search']:focus {
+      border-color: var(--accent);
+      box-shadow: 0 0 0 3px rgba(59, 130, 246, 0.25);
+    }
+
+    .select-category {
+      background-color: var(--bg-card);
+      border: 1px solid var(--border);
+      border-radius: 8px;
+      padding: 0.75rem 1rem;
+      color: var(--text-main);
+      font-size: 1rem;
+      outline: none;
+    }
+
+    .btn {
+      padding: 0.75rem 1.5rem;
+      border-radius: 8px;
+      font-size: 1rem;
+      font-weight: 600;
+      cursor: pointer;
+      border: none;
+      transition: all 0.2s ease;
+      display: inline-flex;
+      align-items: center;
+      gap: 0.5rem;
+    }
+
+    .btn-primary {
+      background-color: var(--accent);
+      color: white;
+    }
+
+    .btn-primary:hover {
+      background-color: var(--accent-hover);
+    }
+
+    .btn-success {
+      background-color: var(--success);
+      color: white;
+    }
+
+    .btn-success:hover {
+      background-color: #059669;
+    }
+
+    .btn-secondary {
+      background-color: var(--bg-card);
+      color: var(--text-main);
+      border: 1px solid var(--border);
+    }
+
+    .btn-secondary:hover {
+      background-color: var(--border);
+    }
+
+    /* Table Card */
+    .card {
+      background-color: var(--bg-secondary);
+      border: 1px solid var(--border);
+      border-radius: 12px;
+      overflow: hidden;
+    }
+
+    .table-container {
+      width: 100%;
+      overflow-x: auto;
+    }
+
+    table {
+      width: 100%;
+      border-collapse: collapse;
+      text-align: left;
+    }
+
+    th {
+      background-color: rgba(51, 65, 85, 0.5);
+      padding: 1rem 1.5rem;
+      font-size: 0.85rem;
+      text-transform: uppercase;
+      letter-spacing: 0.05em;
+      color: var(--text-muted);
+      border-bottom: 1px solid var(--border);
+    }
+
+    td {
+      padding: 1.1rem 1.5rem;
+      border-bottom: 1px solid var(--border);
+      font-size: 0.95rem;
+    }
+
+    tr:hover td {
+      background-color: rgba(51, 65, 85, 0.25);
+    }
+
+    .status-pill {
+      display: inline-block;
+      padding: 0.25rem 0.6rem;
+      border-radius: 4px;
+      font-size: 0.8rem;
+      font-weight: 600;
+    }
+
+    .status-active {
+      background: rgba(16, 185, 129, 0.15);
+      color: var(--success);
+    }
+
+    .status-pending {
+      background: rgba(245, 158, 11, 0.15);
+      color: var(--warning);
+    }
+
+    /* Modal dialog */
+    #checkout-modal {
+      display: none;
+      position: fixed;
+      inset: 0;
+      background: rgba(0, 0, 0, 0.7);
+      align-items: center;
+      justify-content: center;
+      z-index: 1000;
+    }
+
+    .modal-content {
+      background: var(--bg-secondary);
+      border: 1px solid var(--border);
+      border-radius: 12px;
+      padding: 2rem;
+      max-width: 500px;
+      width: 90%;
+      box-shadow: 0 20px 25px -5px rgba(0, 0, 0, 0.5);
+    }
+
+    .modal-content h3 {
+      font-size: 1.5rem;
+      margin-bottom: 1rem;
+      color: var(--success);
+    }
+  </style>
+</head>
+<body>
+
+  <!-- Navigation Bar -->
+  <nav class="navbar">
+    <div class="brand">
+      <div class="brand-icon">VS</div>
+      <span>VoiceStudio Demo</span>
+    </div>
+    <div class="nav-links">
+      <a href="#dashboard" class="nav-link active">Dashboard</a>
+      <a href="#relatorios" class="nav-link">Relatórios</a>
+      <a href="#configuracoes" class="nav-link">Configurações</a>
+      <div id="status-badge" class="badge">
+        <span class="badge-dot"></span>
+        <span id="status-text">Sistema Online</span>
+      </div>
+    </div>
+  </nav>
+
+  <!-- Main Content Container -->
+  <main class="container">
+    <!-- Hero Heading Section -->
+    <section class="hero">
+      <h1 id="hero-heading">Painel de Demonstração Interativo</h1>
+      <p id="title">Ambiente de teste e gravação automatizada em tempo real</p>
+    </section>
+
+    <!-- Dynamic Notification Banner -->
+    <div id="status-banner" style="display: none;">
+      <span id="banner-message">Ação registrada com sucesso!</span>
+      <button class="btn btn-secondary" onclick="document.getElementById('status-banner').style.display='none'">✕</button>
+    </div>
+
+    <!-- Interactive Control Toolbar -->
+    <section class="toolbar">
+      <div class="search-group">
+        <input 
+          type="text" 
+          name="search" 
+          id="search-input" 
+          placeholder="Pesquisar relatório, cliente ou serviço..." 
+          aria-label="Pesquisa rápida"
+          autocomplete="off"
+        >
+        <select id="select-category" class="select-category" aria-label="Filtrar categoria">
+          <option value="all">Todas as Categorias</option>
+          <option value="relatorios">Relatórios</option>
+          <option value="audios">Áudios Sintetizados</option>
+          <option value="faturas">Faturas</option>
+        </select>
+        <button id="btn-search" class="btn btn-primary">Buscar</button>
+        <button id="btn-filtrar" class="btn btn-secondary">Filtrar</button>
+        <button id="btn-limpar" class="btn btn-secondary">Limpar</button>
+      </div>
+
+      <div class="action-group">
+        <button id="btn-checkout" class="btn btn-success">Finalizar Checkout</button>
+      </div>
+    </section>
+
+    <!-- Data Table View -->
+    <section class="card">
+      <div class="table-container">
+        <table id="data-table">
+          <thead>
+            <tr>
+              <th>ID</th>
+              <th>Nome do Recurso</th>
+              <th>Categoria</th>
+              <th>Data</th>
+              <th>Status</th>
+              <th>Ações</th>
+            </tr>
+          </thead>
+          <tbody id="table-body">
+            <tr data-name="relatório de vendas" data-category="relatorios">
+              <td>#1001</td>
+              <td><strong>Relatório de Vendas</strong> - Trimestre 1</td>
+              <td>Relatórios</td>
+              <td>2026-10-24</td>
+              <td><span class="status-pill status-active">Concluído</span></td>
+              <td><button class="btn btn-secondary" style="padding: 0.35rem 0.75rem; font-size: 0.85rem;">Detalhes</button></td>
+            </tr>
+            <tr data-name="narração consideração" data-category="audios">
+              <td>#1002</td>
+              <td><strong>Áudio TTS Considera</strong> (bf91cd6a)</td>
+              <td>Áudios Sintetizados</td>
+              <td>2026-10-24</td>
+              <td><span class="status-pill status-active">Gerado</span></td>
+              <td><button class="btn btn-secondary" style="padding: 0.35rem 0.75rem; font-size: 0.85rem;">Ouvir</button></td>
+            </tr>
+            <tr data-name="relatório mensal" data-category="relatorios">
+              <td>#1003</td>
+              <td><strong>Relatório Mensal</strong> de Performance</td>
+              <td>Relatórios</td>
+              <td>2026-10-23</td>
+              <td><span class="status-pill status-pending">Em Revisão</span></td>
+              <td><button class="btn btn-secondary" style="padding: 0.35rem 0.75rem; font-size: 0.85rem;">Detalhes</button></td>
+            </tr>
+            <tr data-name="fatura hospedagem" data-category="faturas">
+              <td>#1004</td>
+              <td><strong>Fatura de Hospedagem</strong> GPU Cluster</td>
+              <td>Faturas</td>
+              <td>2026-10-20</td>
+              <td><span class="status-pill status-active">Pago</span></td>
+              <td><button class="btn btn-secondary" style="padding: 0.35rem 0.75rem; font-size: 0.85rem;">Baixar</button></td>
+            </tr>
+          </tbody>
+        </table>
+      </div>
+    </section>
+  </main>
+
+  <!-- Checkout Confirmation Modal -->
+  <div id="checkout-modal">
+    <div class="modal-content">
+      <h3>Checkout Concluído!</h3>
+      <p style="margin-bottom: 1.5rem; color: var(--text-muted);">
+        A operação foi confirmada com sucesso pelo painel. A gravação foi finalizada.
+      </p>
+      <button class="btn btn-primary" onclick="document.getElementById('checkout-modal').style.display='none'">Fechar</button>
+    </div>
+  </div>
+
+  <!-- Dynamic Page Logic -->
+  <script>
+    (function() {
+      const searchInput = document.querySelector("input[name='search']");
+      const btnSearch = document.getElementById("btn-search");
+      const btnFiltrar = document.getElementById("btn-filtrar");
+      const btnLimpar = document.getElementById("btn-limpar");
+      const btnCheckout = document.getElementById("btn-checkout");
+      const statusBadge = document.getElementById("status-badge");
+      const statusText = document.getElementById("status-text");
+      const statusBanner = document.getElementById("status-banner");
+      const bannerMessage = document.getElementById("banner-message");
+      const selectCategory = document.getElementById("select-category");
+      const tableBody = document.getElementById("table-body");
+      const rows = tableBody.querySelectorAll("tr");
+
+      function filterTable() {
+        const query = searchInput.value.trim().toLowerCase();
+        const selectedCat = selectCategory.value;
+        let visibleCount = 0;
+
+        rows.forEach(row => {
+          const name = row.getAttribute("data-name") || "";
+          const cat = row.getAttribute("data-category") || "";
+          const matchesQuery = query === "" || name.includes(query) || row.textContent.toLowerCase().includes(query);
+          const matchesCat = selectedCat === "all" || cat === selectedCat;
+
+          if (matchesQuery && matchesCat) {
+            row.style.display = "";
+            visibleCount++;
+          } else {
+            row.style.display = "none";
+          }
+        });
+
+        // Update badge and banner
+        if (query !== "" || selectedCat !== "all") {
+          statusText.textContent = "Filtrado: " + visibleCount + " itens";
+          bannerMessage.textContent = "Filtro aplicado: exibindo " + visibleCount + " resultados para '" + (query || selectedCat) + "'.";
+          statusBanner.style.display = "flex";
+        } else {
+          statusText.textContent = "Sistema Online";
+          statusBanner.style.display = "none";
+        }
+      }
+
+      // Event listeners
+      if (searchInput) {
+        searchInput.addEventListener("input", filterTable);
+        searchInput.addEventListener("keydown", function(e) {
+          if (e.key === "Enter") filterTable();
+        });
+      }
+
+      if (btnSearch) {
+        btnSearch.addEventListener("click", function() {
+          filterTable();
+        });
+      }
+
+      if (btnFiltrar) {
+        btnFiltrar.addEventListener("click", function() {
+          filterTable();
+        });
+      }
+
+      if (btnLimpar) {
+        btnLimpar.addEventListener("click", function() {
+          searchInput.value = "";
+          selectCategory.value = "all";
+          filterTable();
+        });
+      }
+
+      if (selectCategory) {
+        selectCategory.addEventListener("change", filterTable);
+      }
+
+      if (btnCheckout) {
+        btnCheckout.addEventListener("click", function() {
+          statusText.textContent = "Checkout Finalizado";
+          statusBadge.style.background = "rgba(59, 130, 246, 0.2)";
+          statusBadge.style.color = "#3b82f6";
+          statusBadge.style.borderColor = "#3b82f6";
+          bannerMessage.textContent = "Checkout efetuado com sucesso em " + new Date().toLocaleTimeString() + "!";
+          statusBanner.style.display = "flex";
+          document.getElementById("checkout-modal").style.display = "flex";
+        });
+      }
+    })();
+  </script>
+</body>
+</html>

@@ -40,6 +40,9 @@ use handlers::{
     indicadores_handler::{
         ai_chat_proxy_handler, ai_chat_stream_proxy_handler, obter_resumo_indicadores_handler,
     },
+    pipeline_handler::{
+        execute_pipeline_handler, get_performance_comparison_handler, get_pipeline_status_handler,
+    },
     sse_handler::job_stream_sse_handler,
     upload_handler::{listar_importacoes_handler, obter_importacao_handler, upload_sped_handler},
 };
@@ -615,6 +618,13 @@ pub fn build_router(state: AppState) -> Router {
         .route(
             "/api/ai/chat/stream",
             get(ai_chat_stream_proxy_handler).post(ai_chat_proxy_handler),
+        )
+        // Rotas do Pipeline RFB CNPJ
+        .route("/api/pipeline/status", get(get_pipeline_status_handler))
+        .route("/api/pipeline/execute", post(execute_pipeline_handler))
+        .route(
+            "/api/pipeline/performance",
+            get(get_performance_comparison_handler),
         )
         .layer(cors)
         .layer(TraceLayer::new_for_http())

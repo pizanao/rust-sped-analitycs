@@ -35,6 +35,7 @@ services:
       JWT_SECRET: ecd_analytics_production_jwt_secret_token_key_2026_super_strong_random_seed_ok
       AI_GATEWAY_URL: http://ai-gateway:8000
       PORT: 8080
+      TURMALINA_BASES_PATH: /apps/turmalina/bases
     ports:
       - "8080:8080"
     depends_on:
@@ -42,6 +43,7 @@ services:
       - redis
     volumes:
       - ./media:/app/media
+      - ${TURMALINA_BASES_HOST_PATH:-/apps/turmalina/bases}:/apps/turmalina/bases:ro
 
   worker:
     build:

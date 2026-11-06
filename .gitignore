@@ -27,8 +27,24 @@ data/
 *.db
 *.db-journal
 *.db-wal
+*.db-shm
 *.log
 
 # IDE & Editor
 .idea/
 .vscode/
+.temp_demo/
+output/
+/scripts/escriturador-sped/
+/.directory
+.playwright-mcp/
+.coverage
+
+# RFB CNPJ ETL Data & Temporaries
+dados-publicos/
+dados-publicos-zip/
+*.db-shm
+*.db-wal
+*.part
+*.tmp*
+.superpowers/

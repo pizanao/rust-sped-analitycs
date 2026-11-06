@@ -8,12 +8,12 @@ import {
   ChevronLeft,
   ChevronRight,
   ShieldCheck,
-  Cpu,
+  Cpu, DatabaseBackupIcon,
 } from 'lucide-react';
 import { cn } from '@/lib/utils';
 import { Button } from '@/components/ui/button';
 
-export type NavItem = 'ingestao' | 'fiscal' | 'grc' | 'indicadores';
+export type NavItem = 'rfb-cnpj' | 'ingestao' | 'fiscal' | 'grc' | 'indicadores';
 
 interface SidebarProps {
   activeTab: NavItem;
@@ -33,6 +33,13 @@ export const Sidebar: React.FC<SidebarProps> = ({
   isCopilotOpen,
 }) => {
   const navItems = [
+    {
+      id: 'rfb-cnpj' as NavItem,
+      label: 'RFB CNPJ Pipeline',
+      icon: DatabaseBackupIcon,
+      badge: 'Rust Native',
+      description: 'ETL Pipeline com download, decompress, parse e grafos',
+    },
     {
       id: 'ingestao' as NavItem,
       label: 'Ingestão SPED',

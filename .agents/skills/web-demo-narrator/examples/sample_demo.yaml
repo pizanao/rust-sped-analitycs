@@ -1,0 +1,45 @@
+title: Demonstração do Painel Administrativo VoiceStudio
+description: Fluxo interativo de navegação, busca dinâmica de relatórios e finalização
+  de checkout com narração sincronizada em pt-BR
+config:
+  viewport:
+    width: 1920
+    height: 1080
+  fps: 25
+  voice_id: bf91cd6a
+  model: omnivoice
+  base_url: http://localhost:3900
+  output_dir: output
+  temp_dir: .temp_demo
+scenes:
+- id: scene_01_abertura
+  title: Abertura e Navegação
+  narration: Olá pessoal! Sejam bem-vindos à demonstração do nosso painel. Aqui nós
+    gerenciamos relatórios e fluxos com praticidade.
+  pause_after: 0.8
+  actions:
+  - action: navigate
+    url: fixtures/test_page.html
+    highlight: false
+- id: scene_02_busca
+  title: Pesquisa e Filtragem de Dados
+  narration: Vejam como é simples fazer uma busca. Digitamos o termo desejado no campo
+    de pesquisa e acionamos o filtro na hora.
+  pause_after: 0.8
+  actions:
+  - action: type
+    selector: input[name='search']
+    text: Relatório de Vendas
+  - action: click
+    selector: '#btn-search'
+- id: scene_03_checkout
+  title: Conclusão e Checkout
+  narration: Com os dados revisados na tabela, acionamos a finalização do checkout
+    para concluir a rotina com sucesso.
+  pause_after: 1.0
+  actions:
+  - action: click
+    selector: '#btn-checkout'
+  - action: wait
+    seconds: 2.0
+    highlight: false

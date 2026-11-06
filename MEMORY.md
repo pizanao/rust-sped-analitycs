@@ -1,6 +1,6 @@
 # MEMORY.md — Registro de Decisões Arquiteturais e Ajustes de Revisão (`rust_sped_analytics`)
 
-> **Última atualização**: 2026-10-24
+> **Última atualização**: 2026-10-27
 > **Propósito**: Memória persistente do projeto para orientar todos os agentes de desenvolvimento sobre regras invioláveis de negócio, correções de paridade com o legado Django (`ecd_analytics`) e isolamento entre trilhas paralelas.
 
 ---
@@ -105,7 +105,7 @@ Comparando com os utilitários fiscais do Django legado (`apps/fiscal/utils.py` 
 Em outubro de 2026, as rotas legadas e scripts Python/Bash de criação das bases SQLite de dados abertos da Receita Federal do Brasil (`dados-publicos` / `rede-cnpj-master-v26/rede_cria_tabelas`) foram integralmente reconstruídas em uma ferramenta de linha de comando nativa em Rust (`rfb-cnpj-etl`) com automação via GNU Make:
 
 1. **Localização e Integração**:
-   - Código-fonte e pipeline: `/home/pizani/Documents/dados_abertos/rede-cnpj-master-v26/rede_cria_tabelas`
+   - Código-fonte e pipeline (migrado para o workspace): `crates/rfb-cnpj-etl`
    - Bases geradas: `cnpj.db` (dados cadastrais, estabelecimentos, sócios, cnaes) e `rede.db` (grafo relacional de vínculos societários e busca FTS5).
    - Consumidor downstream: `crates/ecd-graph` em `rust-sped-analytics`.
 

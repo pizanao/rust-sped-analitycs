@@ -44,7 +44,7 @@ Cada agente possui autoridade exclusiva sobre um conjunto de diretórios:
 | Trilha / Agente | Escopo do Módulo | Diretórios Exclusivos de Escrita |
 | :--- | :--- | :--- |
 | **Trilha 1** | Motor Parser SPED | `crates/ecd-parser/**` |
-| **Trilha 2** | Motor de Grafos e Rede CNPJ | `crates/ecd-graph/**` |
+| **Trilha 2** | Motor de Grafos e Rede CNPJ | `crates/ecd-graph/**` e `crates/rfb-cnpj-etl/**` |
 | **Trilha 3** | Motor Fiscal & Planilhas XLSX | `crates/ecd-fiscal/**` |
 | **Trilha 4** | Indicadores Econômicos & Cache | `crates/ecd-analytics/**` |
 | **Trilha 5** | Frontend SPA React | `apps/web/**` |
@@ -129,3 +129,39 @@ make test-web
 # 5. Validação de empacotamento
 make package
 ```
+
+
+---
+
+## 5. Estado de Homologação (Outubro 2026)
+
+Todas as 10 trilhas estão concluídas e homologadas. Qualquer novo trabalho deve partir deste baseline.
+
+| Componente | Cobertura | Status |
+| :--- | :---: | :---: |
+| Workspace Rust (`ecd-*`, `apps/*`) | **82/82 testes** | ✅ |
+| Paridade aritmética Django legado | **7/7 testes** | ✅ |
+| AI Gateway FastAPI/LangGraph | **43/43 testes** | ✅ |
+| Frontend SPA React | **15/15 testes** | ✅ |
+| ETL RFB CNPJ (`rfb-cnpj-etl`) | **142/142 testes** | ✅ |
+
+**Benchmarks de throughput validados:**
+- SPED 100 MB: **~1,85 s** | SPED 500 MB (8,88 M registros): **~9,60 s**
+- Throughput: **52–54 MB/s**, ~930.000 linhas/s (100× vs. Django)
+- Fuzzy matching DRE: **>265.000 avaliações/s** (3,48 µs/op)
+- ETL CNPJ: pico de memória **< 110 MB RSS**
+
+---
+
+## 6. Pipeline de Dados Abertos RFB CNPJ (`crates/rfb-cnpj-etl`)
+
+A base SQLite consumida por `crates/ecd-graph` (`cnpj.db`, `rede.db`, `rede_search.db`) é gerada pela crate nativa integrada a este workspace em [`crates/rfb-cnpj-etl/`](crates/rfb-cnpj-etl), que expõe tanto biblioteca (`rfb_cnpj_etl`) quanto binário CLI (`rfb-cnpj-etl`) e alvos no `Makefile` raiz (`make cnpj-download`, `make cnpj-build`, `make cnpj-rede`, `make cnpj-status`, `make cnpj-all`).
+
+Características principais:
+- Download resumível HTTP 206 com crawler WebDAV (detecção automática do diretório mensal RFB).
+- Ingestão streaming zero-disk: descompressão `.zip` diretamente em memória sem extrair CSVs para disco.
+- Geração de `cnpj.db`: 12 tabelas, 18 índices, expansão de sócios PJ via `cnpj_base2matriz`.
+- Geração de `rede.db`: 7 regras de vínculos societários + FTS5 `unicode61 remove_diacritics 2`.
+- Consumo de pico: **< 110 MB RSS** (limite de projeto: 1,8 GB).
+
+**Regra para agentes**: não modifique os arquivos `.db` manualmente; gere-os via `crates/rfb-cnpj-etl` e consuma-os nas consultas analíticas via `crates/ecd-graph`.

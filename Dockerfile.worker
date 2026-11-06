@@ -2,11 +2,12 @@
 # Rust Sped Analytics - Background Consumer Worker Dockerfile (Multi-stage Build)
 # ==============================================================================
 
-FROM rust:1.85-slim-bookworm AS builder
+ARG RUST_IMAGE=rust:1.85-slim-bookworm
+FROM ${RUST_IMAGE} AS builder
 
 WORKDIR /usr/src/app
 
-RUN apt-get -o Acquire::Check-Valid-Until=false update && apt-get install -y --no-install-recommends \
+RUN apt-get -o Acquire::Check-Valid-Until=false -o Acquire::Check-Date=false update && apt-get install -y --no-install-recommends \
     pkg-config \
     build-essential \
     libssl-dev \
@@ -23,7 +24,7 @@ FROM debian:bookworm-slim AS runtime
 
 WORKDIR /app
 
-RUN apt-get -o Acquire::Check-Valid-Until=false update && apt-get install -y --no-install-recommends \
+RUN apt-get -o Acquire::Check-Valid-Until=false -o Acquire::Check-Date=false update && apt-get install -y --no-install-recommends \
     ca-certificates \
     curl \
     && rm -rf /var/lib/apt/lists/*
