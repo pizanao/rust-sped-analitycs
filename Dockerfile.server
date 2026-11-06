@@ -2,8 +2,7 @@
 # Rust Sped Analytics - HTTP Server Dockerfile (Multi-stage Build)
 # ==============================================================================
 
-ARG RUST_IMAGE=rust:1.85-slim-bookworm
-FROM ${RUST_IMAGE} AS builder
+FROM rust:1.99-bookworm AS builder
 
 WORKDIR /usr/src/app
 
